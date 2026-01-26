@@ -1,7 +1,7 @@
 {
   "name": "cesformind-siparis-portali-backend",
   "version": "1.0.0",
-  "description": "Cesformind Sipariş Portali - B2B Gıda Sipariş ve Teslimat Sistemi - Backend API",
+  "description": "Cesformind Sipariş Portali - B2C ve B2B Gıda Sipariş ve Teslimat Sistemi - Backend API",
   "main": "dist/index.js",
   "scripts": {
     "dev": "tsx watch src/index.ts",

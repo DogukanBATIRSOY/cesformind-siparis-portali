@@ -73,7 +73,7 @@ export default function LoginPage() {
           </div>
           <CardTitle className="text-2xl font-bold">Sipariş Portali</CardTitle>
           <CardDescription>
-            B2B Gıda Sipariş ve Teslimat Sistemi
+            B2C ve B2B Gıda Sipariş ve Teslimat Sistemi
           </CardDescription>
         </CardHeader>
         <CardContent>
