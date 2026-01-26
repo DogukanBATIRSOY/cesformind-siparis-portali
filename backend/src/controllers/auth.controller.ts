@@ -477,3 +477,151 @@ export const updateProfile = async (req: AuthRequest, res: Response, next: NextF
     next(error);
   }
 };
+
+// Facebook OAuth Callback
+export const facebookCallback = async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    const { code, redirectUri } = req.body;
+
+    if (!code) {
+      throw new AppError('Yetkilendirme kodu gerekli', 400);
+    }
+
+    const FACEBOOK_APP_ID = process.env.FACEBOOK_APP_ID;
+    const FACEBOOK_APP_SECRET = process.env.FACEBOOK_APP_SECRET;
+
+    if (!FACEBOOK_APP_ID || !FACEBOOK_APP_SECRET) {
+      throw new AppError('Facebook yapılandırması eksik', 500);
+    }
+
+    // Exchange code for access token
+    const tokenResponse = await fetch(
+      `https://graph.facebook.com/v18.0/oauth/access_token?client_id=${FACEBOOK_APP_ID}&redirect_uri=${encodeURIComponent(redirectUri)}&client_secret=${FACEBOOK_APP_SECRET}&code=${code}`
+    );
+
+    const tokenData = await tokenResponse.json();
+
+    if (tokenData.error) {
+      throw new AppError(tokenData.error.message || 'Facebook token alınamadı', 400);
+    }
+
+    const accessToken = tokenData.access_token;
+
+    // Get user info from Facebook
+    const userResponse = await fetch(
+      `https://graph.facebook.com/me?fields=id,name,email,first_name,last_name,picture&access_token=${accessToken}`
+    );
+
+    const fbUser = await userResponse.json();
+
+    if (fbUser.error) {
+      throw new AppError(fbUser.error.message || 'Facebook kullanıcı bilgileri alınamadı', 400);
+    }
+
+    if (!fbUser.email) {
+      throw new AppError('Facebook hesabınızda email adresi bulunamadı. Lütfen email adresinizi Facebook hesabınıza ekleyin.', 400);
+    }
+
+    // Check if user exists
+    let user = await prisma.user.findUnique({
+      where: { email: fbUser.email },
+      include: {
+        customer: {
+          select: {
+            id: true,
+            companyName: true,
+            code: true,
+          },
+        },
+        warehouse: {
+          select: {
+            id: true,
+            name: true,
+            code: true,
+          },
+        },
+      },
+    });
+
+    if (!user) {
+      // Create new user from Facebook data
+      user = await prisma.user.create({
+        data: {
+          email: fbUser.email,
+          phone: `fb_${fbUser.id}`, // Placeholder phone
+          password: await bcrypt.hash(Math.random().toString(36).slice(-12), 12), // Random password
+          firstName: fbUser.first_name || fbUser.name?.split(' ')[0] || 'Facebook',
+          lastName: fbUser.last_name || fbUser.name?.split(' ').slice(1).join(' ') || 'User',
+          role: 'CUSTOMER',
+          status: 'ACTIVE',
+          avatar: fbUser.picture?.data?.url || null,
+          mustChangePassword: false,
+        },
+        include: {
+          customer: {
+            select: {
+              id: true,
+              companyName: true,
+              code: true,
+            },
+          },
+          warehouse: {
+            select: {
+              id: true,
+              name: true,
+              code: true,
+            },
+          },
+        },
+      });
+    }
+
+    if (user.status !== 'ACTIVE') {
+      throw new AppError('Hesabınız aktif değil', 401);
+    }
+
+    // Update last login and avatar
+    await prisma.user.update({
+      where: { id: user.id },
+      data: { 
+        lastLoginAt: new Date(),
+        avatar: fbUser.picture?.data?.url || user.avatar,
+      },
+    });
+
+    // Activity log
+    await prisma.activityLog.create({
+      data: {
+        userId: user.id,
+        action: 'LOGIN_FACEBOOK',
+        entityType: 'User',
+        entityId: user.id,
+        ipAddress: req.ip,
+        userAgent: req.headers['user-agent'],
+      },
+    });
+
+    const token = generateToken(user);
+
+    res.json({
+      success: true,
+      data: {
+        token,
+        user: {
+          id: user.id,
+          email: user.email,
+          firstName: user.firstName,
+          lastName: user.lastName,
+          phone: user.phone,
+          role: user.role,
+          avatar: user.avatar,
+          customer: user.customer,
+          warehouse: user.warehouse,
+          mustChangePassword: user.mustChangePassword,
+        },
+      },
+    });
+  } catch (error) {
+    next(error);
+  }
+};

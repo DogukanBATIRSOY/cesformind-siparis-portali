@@ -103,23 +103,27 @@ export function Sidebar() {
       <div className="h-16 flex items-center justify-between px-4 border-b">
         {isOpen ? (
           <Link href="/dashboard" className="flex items-center gap-2">
-            <Image
-              src="/logo.png"
-              alt="Cesformind"
-              width={140}
-              height={40}
-              className="object-contain"
-            />
+            <div className="bg-gradient-to-r from-[#852EC5] via-[#4F79DD] to-[#11D1F8] p-2 rounded-lg">
+              <Image
+                src="/cesformind-logo.svg"
+                alt="Cesformind"
+                width={120}
+                height={32}
+                className="object-contain"
+              />
+            </div>
           </Link>
         ) : (
           <Link href="/dashboard" className="flex items-center justify-center w-full">
-            <Image
-              src="/logo.png"
-              alt="Cesformind"
-              width={40}
-              height={40}
-              className="object-contain"
-            />
+            <div className="bg-gradient-to-r from-[#852EC5] to-[#4F79DD] p-2 rounded-lg">
+              <Image
+                src="/cesformind-logo.svg"
+                alt="Cesformind"
+                width={24}
+                height={24}
+                className="object-contain"
+              />
+            </div>
           </Link>
         )}
         <button

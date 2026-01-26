@@ -8,7 +8,8 @@ import {
   resetPassword,
   changePassword,
   getProfile,
-  updateProfile
+  updateProfile,
+  facebookCallback
 } from '../controllers/auth.controller.js';
 import { authenticate } from '../middleware/auth.middleware.js';
 
@@ -20,6 +21,7 @@ router.post('/register', register);
 router.post('/forgot-password', forgotPassword);
 router.post('/reset-password', resetPassword);
 router.post('/refresh-token', refreshToken);
+router.post('/facebook/callback', facebookCallback);
 
 // Protected routes
 router.use(authenticate);

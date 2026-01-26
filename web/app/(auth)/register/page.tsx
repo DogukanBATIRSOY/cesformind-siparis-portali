@@ -205,33 +205,35 @@ export default function RegisterPage() {
 
   if (isSuccess) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-green-50 to-emerald-100 p-4">
-        <Card className="w-full max-w-md">
+      <div className="flex items-center justify-center w-full">
+        <Card className="w-full max-w-md shadow-2xl border-0 bg-white/95 backdrop-blur-sm">
           <CardContent className="pt-6 text-center">
             <div className="flex justify-center mb-4">
-              <div className="p-4 bg-green-100 rounded-full">
-                <CheckCircle className="h-12 w-12 text-green-600" />
+              <div className="p-4 bg-[#11D1F8]/20 rounded-full">
+                <CheckCircle className="h-12 w-12 text-[#11D1F8]" />
               </div>
             </div>
-            <h2 className="text-2xl font-bold mb-2">Başvurunuz Alındı!</h2>
-            <p className="text-muted-foreground mb-6">
+            <h2 className="text-2xl font-bold mb-2 bg-gradient-to-r from-[#852EC5] to-[#4F79DD] bg-clip-text text-transparent">
+              Başvurunuz Alındı!
+            </h2>
+            <p className="text-gray-500 mb-6">
               {membershipType === 'INDIVIDUAL' 
                 ? 'Bireysel üyelik başvurunuz başarıyla alınmıştır. Hesabınız onaylandıktan sonra email adresinize bilgilendirme yapılacaktır.'
                 : 'Kurumsal üyelik başvurunuz başarıyla alınmıştır. Başvurunuz incelendikten sonra email adresinize bilgilendirme yapılacaktır.'
               }
             </p>
-            <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-6 text-left">
-              <p className="text-sm text-blue-800">
+            <div className="bg-[#4F79DD]/10 border border-[#4F79DD]/30 rounded-lg p-4 mb-6 text-left">
+              <p className="text-sm text-[#4F79DD]">
                 <strong>Not:</strong> Başvuru onay süreci genellikle 1-2 iş günü içerisinde 
                 tamamlanmaktadır. Acil durumlar için{' '}
-                <a href="tel:02121234567" className="text-blue-600 hover:underline">
+                <a href="tel:02121234567" className="text-[#852EC5] hover:underline">
                   0212 123 45 67
                 </a>{' '}
                 numaralı telefondan bize ulaşabilirsiniz.
               </p>
             </div>
             <Link href="/login">
-              <Button className="w-full">
+              <Button className="w-full bg-gradient-to-r from-[#852EC5] to-[#4F79DD] hover:from-[#7025a8] hover:to-[#3d62c4] text-white">
                 Giriş Sayfasına Dön
               </Button>
             </Link>
@@ -242,19 +244,23 @@ export default function RegisterPage() {
   }
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-blue-50 to-indigo-100 p-4">
-      <Card className="w-full max-w-lg">
-        <CardHeader className="space-y-1 text-center">
+    <div className="flex items-center justify-center w-full py-8">
+      <Card className="w-full max-w-lg shadow-2xl border-0 bg-white/95 backdrop-blur-sm">
+        <CardHeader className="space-y-1 text-center pb-2">
           <div className="flex justify-center mb-4">
-            <Image
-              src="/logo.png"
-              alt="Cesformind"
-              width={160}
-              height={50}
-              className="object-contain"
-            />
+            <div className="bg-gradient-to-r from-[#852EC5] via-[#4F79DD] to-[#11D1F8] p-3 rounded-xl">
+              <Image
+                src="/cesformind-logo.svg"
+                alt="Cesformind"
+                width={160}
+                height={50}
+                className="object-contain"
+              />
+            </div>
           </div>
-          <CardTitle className="text-2xl font-bold">Üyelik Başvurusu</CardTitle>
+          <CardTitle className="text-2xl font-bold bg-gradient-to-r from-[#852EC5] to-[#4F79DD] bg-clip-text text-transparent">
+            Üyelik Başvurusu
+          </CardTitle>
           <CardDescription>
             {step === 0 ? 'Üyelik tipinizi seçin' : membershipType === 'INDIVIDUAL' ? 'Bireysel Üyelik' : 'Kurumsal Üyelik'}
           </CardDescription>

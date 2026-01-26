@@ -65,18 +65,20 @@ export default function ResetPasswordPage() {
 
   if (!token) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-blue-50 to-indigo-100 p-4">
-        <Card className="w-full max-w-md">
+      <div className="flex items-center justify-center w-full">
+        <Card className="w-full max-w-md shadow-2xl border-0 bg-white/95 backdrop-blur-sm">
           <CardContent className="pt-6 text-center">
-            <div className="text-red-500 mb-4">
+            <div className="text-[#852EC5] mb-4">
               <Lock className="h-12 w-12 mx-auto" />
             </div>
             <h2 className="text-xl font-semibold mb-2">Geçersiz Link</h2>
-            <p className="text-muted-foreground mb-4">
+            <p className="text-gray-500 mb-4">
               Bu şifre sıfırlama linki geçersiz veya süresi dolmuş.
             </p>
             <Link href="/forgot-password">
-              <Button>Yeni Link Talep Et</Button>
+              <Button className="bg-gradient-to-r from-[#852EC5] to-[#4F79DD] hover:from-[#7025a8] hover:to-[#3d62c4] text-white">
+                Yeni Link Talep Et
+              </Button>
             </Link>
           </CardContent>
         </Card>
@@ -85,20 +87,24 @@ export default function ResetPasswordPage() {
   }
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-blue-50 to-indigo-100 p-4">
-      <Card className="w-full max-w-md">
-        <CardHeader className="space-y-1 text-center">
+    <div className="flex items-center justify-center w-full">
+      <Card className="w-full max-w-md shadow-2xl border-0 bg-white/95 backdrop-blur-sm">
+        <CardHeader className="space-y-1 text-center pb-2">
           <div className="flex justify-center mb-4">
-            <Image
-              src="/logo.png"
-              alt="Cesformind"
-              width={180}
-              height={60}
-              className="object-contain"
-            />
+            <div className="bg-gradient-to-r from-[#852EC5] via-[#4F79DD] to-[#11D1F8] p-4 rounded-xl">
+              <Image
+                src="/cesformind-logo.svg"
+                alt="Cesformind"
+                width={180}
+                height={60}
+                className="object-contain"
+              />
+            </div>
           </div>
-          <CardTitle className="text-2xl font-bold">Yeni Şifre Belirle</CardTitle>
-          <CardDescription>
+          <CardTitle className="text-2xl font-bold bg-gradient-to-r from-[#852EC5] to-[#4F79DD] bg-clip-text text-transparent">
+            Yeni Şifre Belirle
+          </CardTitle>
+          <CardDescription className="text-gray-600">
             Hesabınız için yeni bir şifre oluşturun
           </CardDescription>
         </CardHeader>
@@ -106,13 +112,13 @@ export default function ResetPasswordPage() {
           {isSuccess ? (
             <div className="text-center space-y-4">
               <div className="flex justify-center">
-                <div className="p-3 bg-green-100 rounded-full">
-                  <CheckCircle className="h-8 w-8 text-green-600" />
+                <div className="p-3 bg-[#11D1F8]/20 rounded-full">
+                  <CheckCircle className="h-8 w-8 text-[#11D1F8]" />
                 </div>
               </div>
               <div>
                 <h3 className="font-semibold text-lg">Şifreniz Değiştirildi!</h3>
-                <p className="text-sm text-muted-foreground mt-2">
+                <p className="text-sm text-gray-500 mt-2">
                   Yeni şifreniz ile giriş yapabilirsiniz.
                 </p>
               </div>

@@ -48,6 +48,9 @@ export const authApi = {
     api.post('/auth/forgot-password', { email }),
   resetPassword: (data: { token: string; newPassword: string }) =>
     api.post('/auth/reset-password', data),
+  // Meta (Facebook) OAuth
+  facebookCallback: (code: string) =>
+    api.post('/auth/facebook/callback', { code, redirectUri: `${typeof window !== 'undefined' ? window.location.origin : ''}/auth/facebook/callback` }),
 }
 
 // Users

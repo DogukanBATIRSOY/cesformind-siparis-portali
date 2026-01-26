@@ -124,35 +124,39 @@ export default function ChangePasswordPage() {
   }
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-amber-50 to-orange-100 p-4">
-      <Card className="w-full max-w-md">
-        <CardHeader className="space-y-1 text-center">
+    <div className="flex items-center justify-center w-full">
+      <Card className="w-full max-w-md shadow-2xl border-0 bg-white/95 backdrop-blur-sm">
+        <CardHeader className="space-y-1 text-center pb-2">
           <div className="flex justify-center mb-4">
-            <Image
-              src="/logo.png"
-              alt="Cesformind"
-              width={180}
-              height={60}
-              className="object-contain"
-            />
-          </div>
-          <div className="flex justify-center mb-2">
-            <div className="p-3 bg-amber-100 rounded-full">
-              <Shield className="h-8 w-8 text-amber-600" />
+            <div className="bg-gradient-to-r from-[#852EC5] via-[#4F79DD] to-[#11D1F8] p-4 rounded-xl">
+              <Image
+                src="/cesformind-logo.svg"
+                alt="Cesformind"
+                width={180}
+                height={60}
+                className="object-contain"
+              />
             </div>
           </div>
-          <CardTitle className="text-2xl font-bold">Şifre Değiştirme Zorunlu</CardTitle>
-          <CardDescription>
+          <div className="flex justify-center mb-2">
+            <div className="p-3 bg-[#852EC5]/20 rounded-full">
+              <Shield className="h-8 w-8 text-[#852EC5]" />
+            </div>
+          </div>
+          <CardTitle className="text-2xl font-bold bg-gradient-to-r from-[#852EC5] to-[#4F79DD] bg-clip-text text-transparent">
+            Şifre Değiştirme Zorunlu
+          </CardTitle>
+          <CardDescription className="text-gray-600">
             Güvenliğiniz için lütfen şifrenizi değiştirin
           </CardDescription>
         </CardHeader>
         <CardContent>
-          <div className="bg-amber-50 border border-amber-200 rounded-lg p-3 mb-4">
+          <div className="bg-[#852EC5]/10 border border-[#852EC5]/30 rounded-lg p-3 mb-4">
             <div className="flex items-start gap-2">
-              <AlertTriangle className="h-5 w-5 text-amber-600 mt-0.5" />
-              <div className="text-sm text-amber-800">
+              <AlertTriangle className="h-5 w-5 text-[#852EC5] mt-0.5" />
+              <div className="text-sm text-[#852EC5]">
                 <p className="font-medium">İlk girişinizde şifrenizi değiştirmeniz gerekmektedir.</p>
-                <p className="mt-1 text-amber-700">Bu işlem zorunludur ve sisteme erişim için gereklidir.</p>
+                <p className="mt-1 opacity-80">Bu işlem zorunludur ve sisteme erişim için gereklidir.</p>
               </div>
             </div>
           </div>

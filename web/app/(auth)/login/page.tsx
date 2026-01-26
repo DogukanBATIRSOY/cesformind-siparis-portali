@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import Image from 'next/image'
@@ -22,10 +22,18 @@ const loginSchema = z.object({
 
 type LoginForm = z.infer<typeof loginSchema>
 
+// Meta (Facebook) Icon Component
+const MetaIcon = () => (
+  <svg viewBox="0 0 24 24" className="h-5 w-5" fill="currentColor">
+    <path d="M12 2.04c-5.5 0-10 4.49-10 10.02 0 5 3.66 9.15 8.44 9.9v-7H7.9v-2.9h2.54V9.85c0-2.51 1.49-3.89 3.78-3.89 1.09 0 2.23.19 2.23.19v2.47h-1.26c-1.24 0-1.63.77-1.63 1.56v1.88h2.78l-.45 2.9h-2.33v7a10 10 0 0 0 8.44-9.9c0-5.53-4.5-10.02-10-10.02Z"/>
+  </svg>
+)
+
 export default function LoginPage() {
   const router = useRouter()
   const setAuth = useAuthStore((state) => state.setAuth)
   const [isLoading, setIsLoading] = useState(false)
+  const [isMetaLoading, setIsMetaLoading] = useState(false)
 
   const {
     register,
@@ -58,31 +66,61 @@ export default function LoginPage() {
     }
   }
 
+  // Meta (Facebook) Login Handler
+  const handleMetaLogin = async () => {
+    setIsMetaLoading(true)
+    try {
+      const FACEBOOK_APP_ID = process.env.NEXT_PUBLIC_FACEBOOK_APP_ID
+      const REDIRECT_URI = `${window.location.origin}/auth/facebook/callback`
+      
+      if (!FACEBOOK_APP_ID) {
+        toast.error('Meta giriş yapılandırması eksik')
+        setIsMetaLoading(false)
+        return
+      }
+
+      // Facebook OAuth URL
+      const scope = 'email,public_profile'
+      const authUrl = `https://www.facebook.com/v18.0/dialog/oauth?client_id=${FACEBOOK_APP_ID}&redirect_uri=${encodeURIComponent(REDIRECT_URI)}&scope=${scope}&response_type=code`
+      
+      // Redirect to Facebook
+      window.location.href = authUrl
+    } catch (error) {
+      toast.error('Meta ile giriş başlatılamadı')
+      setIsMetaLoading(false)
+    }
+  }
+
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-blue-50 to-indigo-100 p-4">
-      <Card className="w-full max-w-md">
-        <CardHeader className="space-y-1 text-center">
+    <div className="flex items-center justify-center w-full">
+      <Card className="w-full max-w-md shadow-2xl border-0 bg-white/95 backdrop-blur-sm">
+        <CardHeader className="space-y-1 text-center pb-2">
           <div className="flex justify-center mb-4">
-            <Image
-              src="/logo.png"
-              alt="Cesformind"
-              width={180}
-              height={60}
-              className="object-contain"
-            />
+            <div className="bg-gradient-to-r from-[#852EC5] via-[#4F79DD] to-[#11D1F8] p-4 rounded-xl">
+              <Image
+                src="/cesformind-logo.svg"
+                alt="Cesformind"
+                width={180}
+                height={60}
+                className="object-contain"
+              />
+            </div>
           </div>
-          <CardTitle className="text-2xl font-bold">Sipariş Portali</CardTitle>
-          <CardDescription>
+          <CardTitle className="text-2xl font-bold bg-gradient-to-r from-[#852EC5] to-[#4F79DD] bg-clip-text text-transparent">
+            Sipariş Portali
+          </CardTitle>
+          <CardDescription className="text-gray-600">
             B2C ve B2B Gıda Sipariş ve Teslimat Sistemi
           </CardDescription>
         </CardHeader>
         <CardContent>
           <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
             <div className="space-y-2">
-              <label className="text-sm font-medium">Email</label>
+              <label className="text-sm font-medium text-gray-700">Email</label>
               <Input
                 type="email"
                 placeholder="ornek@email.com"
+                className="border-gray-300 focus:border-[#4F79DD] focus:ring-[#4F79DD]"
                 {...register('email')}
               />
               {errors.email && (
@@ -90,36 +128,71 @@ export default function LoginPage() {
               )}
             </div>
             <div className="space-y-2">
-              <label className="text-sm font-medium">Şifre</label>
+              <label className="text-sm font-medium text-gray-700">Şifre</label>
               <Input
                 type="password"
                 placeholder="••••••••"
+                className="border-gray-300 focus:border-[#4F79DD] focus:ring-[#4F79DD]"
                 {...register('password')}
               />
               {errors.password && (
                 <p className="text-sm text-red-500">{errors.password.message}</p>
               )}
             </div>
-            <Button type="submit" className="w-full" disabled={isLoading}>
+            <Button 
+              type="submit" 
+              className="w-full bg-gradient-to-r from-[#852EC5] to-[#4F79DD] hover:from-[#7025a8] hover:to-[#3d62c4] text-white shadow-lg" 
+              disabled={isLoading}
+            >
               {isLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
               Giriş Yap
             </Button>
           </form>
+
+          {/* Divider */}
+          <div className="relative my-6">
+            <div className="absolute inset-0 flex items-center">
+              <div className="w-full border-t border-gray-300"></div>
+            </div>
+            <div className="relative flex justify-center text-sm">
+              <span className="px-4 bg-white text-gray-500">veya</span>
+            </div>
+          </div>
+
+          {/* Meta Login Button */}
+          <Button
+            type="button"
+            variant="outline"
+            className="w-full border-[#1877F2] text-[#1877F2] hover:bg-[#1877F2] hover:text-white transition-colors"
+            onClick={handleMetaLogin}
+            disabled={isMetaLoading}
+          >
+            {isMetaLoading ? (
+              <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+            ) : (
+              <MetaIcon />
+            )}
+            <span className="ml-2">Meta ile Giriş Yap</span>
+          </Button>
+
           <div className="mt-4 text-center text-sm">
             <Link
               href="/forgot-password"
-              className="text-primary hover:underline"
+              className="text-[#4F79DD] hover:text-[#852EC5] hover:underline font-medium"
             >
               Şifremi unuttum
             </Link>
           </div>
           
-          <div className="mt-6 pt-6 border-t">
-            <p className="text-sm text-center text-muted-foreground mb-3">
+          <div className="mt-6 pt-6 border-t border-gray-200">
+            <p className="text-sm text-center text-gray-500 mb-3">
               Henüz hesabınız yok mu?
             </p>
             <Link href="/register">
-              <Button variant="outline" className="w-full">
+              <Button 
+                variant="outline" 
+                className="w-full border-[#4F79DD] text-[#4F79DD] hover:bg-[#4F79DD]/10 hover:border-[#852EC5]"
+              >
                 Üyelik Başvurusu Yap
               </Button>
             </Link>
