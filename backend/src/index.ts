@@ -3,7 +3,7 @@ import cors from 'cors';
 import helmet from 'helmet';
 import morgan from 'morgan';
 import dotenv from 'dotenv';
-import { PrismaClient } from '@prisma/client';
+import { prisma } from './lib/prisma.js';
 
 // Routes
 import authRoutes from './routes/auth.routes.js';
@@ -17,6 +17,8 @@ import paymentRoutes from './routes/payment.routes.js';
 import warehouseRoutes from './routes/warehouse.routes.js';
 import reportRoutes from './routes/report.routes.js';
 import syncRoutes from './routes/sync.routes.js';
+import publicRoutes from './routes/public.routes.js';
+import uploadRoutes from './routes/upload.routes.js';
 
 // Middleware
 import { errorHandler } from './middleware/error.middleware.js';
@@ -25,7 +27,6 @@ import { notFound } from './middleware/notFound.middleware.js';
 dotenv.config();
 
 const app = express();
-const prisma = new PrismaClient();
 const PORT = process.env.PORT || 3001;
 
 // Middleware
@@ -50,7 +51,10 @@ app.get('/health', (req, res) => {
   });
 });
 
-// API Routes
+// Public API Routes (no auth required)
+app.use('/api/public', publicRoutes);
+
+// API Routes (auth required)
 app.use('/api/auth', authRoutes);
 app.use('/api/users', userRoutes);
 app.use('/api/customers', customerRoutes);
@@ -62,6 +66,7 @@ app.use('/api/payments', paymentRoutes);
 app.use('/api/warehouses', warehouseRoutes);
 app.use('/api/reports', reportRoutes);
 app.use('/api/sync', syncRoutes);
+app.use('/api/upload', uploadRoutes);
 
 // Error handling
 app.use(notFound);
@@ -74,10 +79,31 @@ process.on('SIGTERM', async () => {
   process.exit(0);
 });
 
+// Initialize default settings
+async function initializeSettings() {
+  try {
+    // Email doğrulama ayarı yoksa oluştur (varsayılan: kapalı)
+    await prisma.setting.upsert({
+      where: { key: 'require_email_verification' },
+      update: {},
+      create: {
+        key: 'require_email_verification',
+        value: 'false',
+        type: 'boolean',
+        group: 'security',
+      },
+    });
+    console.log('✅ Default settings initialized');
+  } catch (error) {
+    console.error('⚠️ Could not initialize settings:', error);
+  }
+}
+
 // Start server
-app.listen(PORT, () => {
-  console.log(`🚀 Cesformind Sipariş Portali API Server running on port ${PORT}`);
+app.listen(PORT, async () => {
+  console.log(`🚀 Cesorder Sipariş Sistemi API Server running on port ${PORT}`);
   console.log(`📚 Environment: ${process.env.NODE_ENV || 'development'}`);
+  await initializeSettings();
 });
 
 export { prisma };

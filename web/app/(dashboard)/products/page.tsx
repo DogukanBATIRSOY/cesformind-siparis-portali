@@ -140,12 +140,18 @@ export default function ProductsPage() {
                     <tr key={product.id} className="border-b hover:bg-muted/50">
                       <td className="p-4">
                         <div className="flex items-center gap-3">
-                          <div className="w-12 h-12 bg-muted rounded-lg flex items-center justify-center">
-                            {product.images?.[0] ? (
+                          <div className="w-12 h-12 bg-muted rounded-lg flex items-center justify-center overflow-hidden">
+                            {product.image ? (
+                              <img
+                                src={product.image}
+                                alt={product.name}
+                                className="w-full h-full object-cover"
+                              />
+                            ) : product.images?.[0] ? (
                               <img
                                 src={product.images[0].url}
                                 alt={product.name}
-                                className="w-full h-full object-cover rounded-lg"
+                                className="w-full h-full object-cover"
                               />
                             ) : (
                               <Package className="h-6 w-6 text-muted-foreground" />

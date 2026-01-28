@@ -1,33 +1,42 @@
 'use client'
 
 import { useState } from 'react'
-import { useQuery } from '@tanstack/react-query'
+import { useQuery, useQueryClient } from '@tanstack/react-query'
 import Link from 'next/link'
 import { customersApi } from '@/lib/api'
 import { formatCurrency } from '@/lib/utils'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
-import { Card, CardContent } from '@/components/ui/card'
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
+import { toast } from 'sonner'
 import {
   Plus,
   Search,
   Eye,
   Edit,
-  MoreHorizontal,
   ChevronLeft,
   ChevronRight,
   Building2,
   Phone,
+  KeyRound,
+  User,
+  X,
+  Copy,
+  Check,
 } from 'lucide-react'
 
 const typeLabels: Record<string, string> = {
+  INDIVIDUAL: 'Bireysel',
+  CORPORATE: 'Kurumsal',
   RESTAURANT: 'Restoran',
   MARKET: 'Market',
   HOTEL: 'Otel',
   CAFE: 'Kafe',
   CATERING: 'Catering',
   WHOLESALE: 'Toptan',
+  DISTRIBUTOR: 'Distribütör',
+  DEALER: 'Bayi',
   OTHER: 'Diğer',
 }
 
@@ -50,6 +59,14 @@ export default function CustomersPage() {
   const [search, setSearch] = useState('')
   const [type, setType] = useState('')
   const [status, setStatus] = useState('')
+  const [resetPasswordModal, setResetPasswordModal] = useState<{
+    open: boolean
+    customer: any
+    loading: boolean
+    result: { password: string; email: string } | null
+  }>({ open: false, customer: null, loading: false, result: null })
+  const [copied, setCopied] = useState(false)
+  const queryClient = useQueryClient()
 
   const { data, isLoading } = useQuery({
     queryKey: ['customers', page, search, type, status],
@@ -65,6 +82,40 @@ export default function CustomersPage() {
 
   const customers = data?.data?.data || []
   const meta = data?.data?.meta
+
+  // Şifre sıfırlama
+  const handleResetPassword = async () => {
+    if (!resetPasswordModal.customer) return
+    
+    setResetPasswordModal((prev) => ({ ...prev, loading: true }))
+    
+    try {
+      const response = await customersApi.resetPassword(resetPasswordModal.customer.id)
+      const { temporaryPassword, userEmail } = response.data.data
+      
+      setResetPasswordModal((prev) => ({
+        ...prev,
+        loading: false,
+        result: { password: temporaryPassword, email: userEmail },
+      }))
+      
+      toast.success('Şifre başarıyla sıfırlandı')
+    } catch (error: any) {
+      toast.error(error.response?.data?.message || 'Şifre sıfırlanırken hata oluştu')
+      setResetPasswordModal((prev) => ({ ...prev, loading: false }))
+    }
+  }
+
+  const copyToClipboard = (text: string) => {
+    navigator.clipboard.writeText(text)
+    setCopied(true)
+    setTimeout(() => setCopied(false), 2000)
+  }
+
+  const closeResetModal = () => {
+    setResetPasswordModal({ open: false, customer: null, loading: false, result: null })
+    setCopied(false)
+  }
 
   return (
     <div className="space-y-6">
@@ -181,15 +232,30 @@ export default function CustomersPage() {
                   </div>
                   <div className="flex gap-1">
                     <Link href={`/customers/${customer.id}`}>
-                      <Button variant="ghost" size="icon">
+                      <Button variant="ghost" size="icon" title="Görüntüle">
                         <Eye className="h-4 w-4" />
                       </Button>
                     </Link>
                     <Link href={`/customers/${customer.id}/edit`}>
-                      <Button variant="ghost" size="icon">
+                      <Button variant="ghost" size="icon" title="Düzenle">
                         <Edit className="h-4 w-4" />
                       </Button>
                     </Link>
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      title="Şifre Sıfırla"
+                      onClick={() =>
+                        setResetPasswordModal({
+                          open: true,
+                          customer,
+                          loading: false,
+                          result: null,
+                        })
+                      }
+                    >
+                      <KeyRound className="h-4 w-4" />
+                    </Button>
                   </div>
                 </div>
               </CardContent>
@@ -225,6 +291,118 @@ export default function CustomersPage() {
               <ChevronRight className="h-4 w-4" />
             </Button>
           </div>
+        </div>
+      )}
+
+      {/* Şifre Sıfırlama Modal */}
+      {resetPasswordModal.open && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center">
+          <div
+            className="absolute inset-0 bg-black/50"
+            onClick={closeResetModal}
+          />
+          <Card className="relative z-10 w-full max-w-md mx-4">
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+              <CardTitle className="text-lg flex items-center gap-2">
+                <KeyRound className="h-5 w-5" />
+                Şifre Sıfırla
+              </CardTitle>
+              <Button variant="ghost" size="icon" onClick={closeResetModal}>
+                <X className="h-4 w-4" />
+              </Button>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              {resetPasswordModal.result ? (
+                <>
+                  <div className="p-4 bg-green-50 dark:bg-green-950 rounded-lg border border-green-200 dark:border-green-800">
+                    <p className="text-sm text-green-800 dark:text-green-200 mb-2">
+                      Şifre başarıyla sıfırlandı!
+                    </p>
+                    <div className="space-y-2">
+                      <div>
+                        <p className="text-xs text-muted-foreground">Email</p>
+                        <p className="font-medium">{resetPasswordModal.result.email}</p>
+                      </div>
+                      <div>
+                        <p className="text-xs text-muted-foreground">Yeni Şifre</p>
+                        <div className="flex items-center gap-2">
+                          <code className="flex-1 px-2 py-1 bg-muted rounded text-sm font-mono">
+                            {resetPasswordModal.result.password}
+                          </code>
+                          <Button
+                            variant="outline"
+                            size="icon"
+                            onClick={() =>
+                              copyToClipboard(resetPasswordModal.result!.password)
+                            }
+                          >
+                            {copied ? (
+                              <Check className="h-4 w-4 text-green-500" />
+                            ) : (
+                              <Copy className="h-4 w-4" />
+                            )}
+                          </Button>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                  <p className="text-xs text-muted-foreground">
+                    Kullanıcı ilk girişte şifresini değiştirmek zorunda kalacak.
+                  </p>
+                  <Button className="w-full" onClick={closeResetModal}>
+                    Tamam
+                  </Button>
+                </>
+              ) : (
+                <>
+                  <div className="flex items-center gap-3 p-3 bg-muted rounded-lg">
+                    <div className="p-2 bg-primary/10 rounded-lg">
+                      <User className="h-5 w-5 text-primary" />
+                    </div>
+                    <div>
+                      <p className="font-semibold">
+                        {resetPasswordModal.customer?.companyName}
+                      </p>
+                      <p className="text-sm text-muted-foreground">
+                        {resetPasswordModal.customer?.code}
+                      </p>
+                    </div>
+                  </div>
+                  <p className="text-sm text-muted-foreground">
+                    Bu müşterinin şifresini sıfırlamak istediğinizden emin misiniz?
+                    Yeni bir geçici şifre oluşturulacak ve kullanıcı ilk girişte
+                    şifresini değiştirmek zorunda kalacak.
+                  </p>
+                  <div className="flex gap-2">
+                    <Button
+                      variant="outline"
+                      className="flex-1"
+                      onClick={closeResetModal}
+                    >
+                      İptal
+                    </Button>
+                    <Button
+                      className="flex-1"
+                      onClick={handleResetPassword}
+                      disabled={resetPasswordModal.loading}
+                    >
+                      {resetPasswordModal.loading ? (
+                        <>
+                          <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2" />
+                          Sıfırlanıyor...
+                        </>
+                      ) : (
+                        <>
+                          <KeyRound className="h-4 w-4 mr-2" />
+                          Şifreyi Sıfırla
+                        </>
+                      )}
+                    </Button>
+                  </div>
+                </>
+              )}
+            </CardContent>
+          </Card>
         </div>
       )}
     </div>

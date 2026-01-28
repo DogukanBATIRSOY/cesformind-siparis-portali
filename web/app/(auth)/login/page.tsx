@@ -34,6 +34,27 @@ export default function LoginPage() {
   const setAuth = useAuthStore((state) => state.setAuth)
   const [isLoading, setIsLoading] = useState(false)
   const [isMetaLoading, setIsMetaLoading] = useState(false)
+  const [loginError, setLoginError] = useState<string | null>(null)
+  
+  // Sayfa yüklendiğinde localStorage'dan hatayı oku
+  useEffect(() => {
+    const savedError = localStorage.getItem('loginError')
+    if (savedError) {
+      setLoginError(savedError)
+    }
+  }, [])
+  
+  // Hata değiştiğinde localStorage'a kaydet
+  useEffect(() => {
+    if (loginError) {
+      localStorage.setItem('loginError', loginError)
+    }
+  }, [loginError])
+  
+  const clearError = () => {
+    setLoginError(null)
+    localStorage.removeItem('loginError')
+  }
 
   const {
     register,
@@ -45,6 +66,7 @@ export default function LoginPage() {
 
   const onSubmit = async (data: LoginForm) => {
     setIsLoading(true)
+    clearError() // Önceki hatayı temizle
     try {
       const response = await authApi.login(data)
       const { token, user } = response.data.data
@@ -57,10 +79,33 @@ export default function LoginPage() {
         router.push('/change-password')
       } else {
         toast.success('Giriş başarılı!')
-        router.push('/dashboard')
+        
+        // Kullanıcı tipine göre yönlendirme
+        if (user.customer?.type === 'INDIVIDUAL') {
+          // Bireysel müşteri → Ana sayfa (ürün seçimi)
+          router.push('/')
+        } else {
+          // Kurumsal müşteri, Admin, Staff → Dashboard
+          router.push('/dashboard')
+        }
       }
     } catch (error: any) {
-      toast.error(error.response?.data?.message || 'Giriş başarısız')
+      // Email doğrulama gerekiyorsa yönlendir
+      if (error.response?.data?.data?.requiresVerification) {
+        const email = error.response?.data?.data?.email
+        toast.info('Lütfen önce email adresinizi doğrulayın')
+        router.push(`/verify-email?email=${encodeURIComponent(email)}`)
+        return
+      }
+      
+      // Hata mesajını belirle
+      const errorMessage = error.response?.data?.message || 'Giriş başarısız'
+      const displayMessage = errorMessage === 'Geçersiz email veya şifre' 
+        ? 'Parolanız hatalı, lütfen tekrar deneyiniz.' 
+        : errorMessage
+      
+      setLoginError(displayMessage)
+      localStorage.setItem('loginError', displayMessage)
     } finally {
       setIsLoading(false)
     }
@@ -98,10 +143,10 @@ export default function LoginPage() {
           <div className="flex justify-center mb-4">
             <div className="bg-gradient-to-r from-[#852EC5] via-[#4F79DD] to-[#11D1F8] p-4 rounded-xl">
               <Image
-                src="/cesformind-logo.svg"
-                alt="Cesformind"
-                width={180}
-                height={60}
+                src="/cesorder-logo-white.png"
+                alt="Cesorder"
+                width={280}
+                height={90}
                 className="object-contain"
               />
             </div>
@@ -139,6 +184,33 @@ export default function LoginPage() {
                 <p className="text-sm text-red-500">{errors.password.message}</p>
               )}
             </div>
+            
+            {/* Hata Mesajı - localStorage ile kalıcı */}
+            {loginError && (
+              <div className="p-4 rounded-lg bg-red-100 border-2 border-red-500 shadow-lg relative">
+                <button 
+                  type="button"
+                  onClick={clearError}
+                  className="absolute top-2 right-2 text-red-500 hover:text-red-700"
+                >
+                  <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                  </svg>
+                </button>
+                <div className="flex items-center justify-center gap-2 pr-6">
+                  <svg className="w-6 h-6 text-red-600 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                  </svg>
+                  <p className="text-red-700 font-bold text-base">
+                    {loginError}
+                  </p>
+                </div>
+                <p className="text-red-600 text-sm text-center mt-2">
+                  Lütfen bilgilerinizi kontrol edip tekrar deneyiniz.
+                </p>
+              </div>
+            )}
+            
             <Button 
               type="submit" 
               className="w-full bg-gradient-to-r from-[#852EC5] to-[#4F79DD] hover:from-[#7025a8] hover:to-[#3d62c4] text-white shadow-lg" 

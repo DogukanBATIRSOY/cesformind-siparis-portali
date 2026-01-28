@@ -3,11 +3,13 @@ import { Request, Response, NextFunction } from 'express';
 export class AppError extends Error {
   statusCode: number;
   isOperational: boolean;
+  data?: Record<string, any>;
 
-  constructor(message: string, statusCode: number) {
+  constructor(message: string, statusCode: number, data?: Record<string, any>) {
     super(message);
     this.statusCode = statusCode;
     this.isOperational = true;
+    this.data = data;
 
     Error.captureStackTrace(this, this.constructor);
   }
@@ -25,6 +27,7 @@ export const errorHandler = (
     return res.status(err.statusCode).json({
       success: false,
       message: err.message,
+      ...(err.data && { data: err.data }),
     });
   }
 
@@ -33,10 +36,28 @@ export const errorHandler = (
     const prismaError = err as any;
     
     if (prismaError.code === 'P2002') {
+      const field = prismaError.meta?.target;
+      let message = 'Bu kayıt zaten mevcut';
+      
+      // Alan bazlı hata mesajları
+      if (field) {
+        const fieldMessages: Record<string, string> = {
+          'User_email_key': 'Bu email adresi zaten kullanılıyor',
+          'User_phone_key': 'Bu telefon numarası zaten kullanılıyor',
+          'Customer_code_key': 'Bu müşteri kodu zaten kullanılıyor',
+          'Customer_taxNumber_key': 'Bu vergi numarası zaten kayıtlı',
+          'Product_sku_key': 'Bu stok kodu zaten kullanılıyor',
+          'Product_barcode_key': 'Bu barkod zaten kullanılıyor',
+        };
+        
+        const fieldKey = Array.isArray(field) ? field[0] : field;
+        message = fieldMessages[fieldKey] || `Bu ${fieldKey} zaten mevcut`;
+      }
+      
       return res.status(400).json({
         success: false,
-        message: 'Bu kayıt zaten mevcut',
-        field: prismaError.meta?.target,
+        message,
+        field,
       });
     }
 

@@ -27,25 +27,25 @@
   }
 
   .dark {
-    --background: 222.2 84% 4.9%;
-    --foreground: 210 40% 98%;
-    --card: 222.2 84% 4.9%;
-    --card-foreground: 210 40% 98%;
-    --popover: 222.2 84% 4.9%;
-    --popover-foreground: 210 40% 98%;
+    --background: 224 71% 4%;
+    --foreground: 213 31% 91%;
+    --card: 224 71% 7%;
+    --card-foreground: 213 31% 91%;
+    --popover: 224 71% 7%;
+    --popover-foreground: 213 31% 91%;
     --primary: 217.2 91.2% 59.8%;
     --primary-foreground: 222.2 47.4% 11.2%;
-    --secondary: 217.2 32.6% 17.5%;
-    --secondary-foreground: 210 40% 98%;
-    --muted: 217.2 32.6% 17.5%;
-    --muted-foreground: 215 20.2% 65.1%;
-    --accent: 217.2 32.6% 17.5%;
-    --accent-foreground: 210 40% 98%;
-    --destructive: 0 62.8% 30.6%;
-    --destructive-foreground: 210 40% 98%;
-    --border: 217.2 32.6% 17.5%;
-    --input: 217.2 32.6% 17.5%;
-    --ring: 224.3 76.3% 48%;
+    --secondary: 222 47% 11%;
+    --secondary-foreground: 213 31% 91%;
+    --muted: 223 47% 11%;
+    --muted-foreground: 215 20% 65%;
+    --accent: 222 47% 15%;
+    --accent-foreground: 213 31% 91%;
+    --destructive: 0 63% 31%;
+    --destructive-foreground: 213 31% 91%;
+    --border: 223 47% 15%;
+    --input: 223 47% 15%;
+    --ring: 224 76% 48%;
   }
 }
 
@@ -56,6 +56,44 @@
   body {
     @apply bg-background text-foreground;
   }
+}
+
+/* Dark mode overrides for common elements */
+.dark .bg-gray-50 {
+  background-color: hsl(var(--muted)) !important;
+}
+
+.dark .bg-gray-100 {
+  background-color: hsl(var(--accent)) !important;
+}
+
+.dark .bg-gray-200 {
+  background-color: hsl(var(--border)) !important;
+}
+
+.dark .text-gray-400,
+.dark .text-gray-500,
+.dark .text-gray-600 {
+  color: hsl(var(--muted-foreground)) !important;
+}
+
+.dark .text-gray-700,
+.dark .text-gray-800,
+.dark .text-gray-900 {
+  color: hsl(var(--foreground)) !important;
+}
+
+.dark .border-gray-200,
+.dark .border-gray-300 {
+  border-color: hsl(var(--border)) !important;
+}
+
+.dark .hover\:bg-gray-100:hover {
+  background-color: hsl(var(--accent)) !important;
+}
+
+.dark .hover\:bg-gray-50:hover {
+  background-color: hsl(var(--muted)) !important;
 }
 
 /* Custom scrollbar */

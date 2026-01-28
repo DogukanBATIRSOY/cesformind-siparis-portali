@@ -26,6 +26,11 @@ model User {
   mustChangePassword Boolean @default(true) // İlk girişte şifre değiştirme zorunluluğu
   passwordChangedAt  DateTime? // Son şifre değişiklik tarihi
   
+  // Email doğrulama
+  emailVerified           Boolean   @default(false)
+  emailVerificationCode   String?   // 6 haneli doğrulama kodu
+  emailVerificationExpires DateTime? // Kodun geçerlilik süresi
+  
   customerId    String?  @unique
   customer      Customer? @relation(fields: [customerId], references: [id])
   
@@ -190,6 +195,7 @@ model Product {
   minStock        Int      @default(0)
   maxStock        Int?
   
+  image           String?  // Ana ürün görseli URL
   images          ProductImage[]
   
   status          String   @default("ACTIVE") // ACTIVE, INACTIVE, OUT_OF_STOCK, DISCONTINUED

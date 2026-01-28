@@ -14,6 +14,8 @@ interface User {
     id: string
     code: string
     companyName: string
+    type: 'INDIVIDUAL' | 'CORPORATE' | 'DISTRIBUTOR' | 'DEALER' | 'OTHER'
+    status: string
   }
   warehouse?: {
     id: string

@@ -88,6 +88,8 @@ export const customersApi = {
     api.put(`/customers/${id}/addresses/${addressId}`, data),
   deleteAddress: (id: string, addressId: string) =>
     api.delete(`/customers/${id}/addresses/${addressId}`),
+  resetPassword: (id: string, newPassword?: string) =>
+    api.post(`/customers/${id}/reset-password`, { newPassword }),
 }
 
 // Products
@@ -181,4 +183,23 @@ export const reportsApi = {
     api.get('/reports/deliveries', { params }),
   getPaymentReport: (params?: any) => api.get('/reports/payments', { params }),
   getStockReport: (params?: any) => api.get('/reports/stock', { params }),
+}
+
+// Upload
+export const uploadApi = {
+  uploadImage: (file: File) => {
+    const formData = new FormData()
+    formData.append('image', file)
+    return api.post('/upload/image', formData, {
+      headers: { 'Content-Type': 'multipart/form-data' },
+    })
+  },
+  uploadImages: (files: File[]) => {
+    const formData = new FormData()
+    files.forEach((file) => formData.append('images', file))
+    return api.post('/upload/images', formData, {
+      headers: { 'Content-Type': 'multipart/form-data' },
+    })
+  },
+  deleteImage: (filename: string) => api.delete(`/upload/image/${filename}`),
 }

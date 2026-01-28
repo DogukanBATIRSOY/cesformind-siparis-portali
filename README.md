@@ -1,6 +1,6 @@
-# Cesformind Sipariş Portali - B2C ve B2B Gıda Sipariş ve Teslimat Sistemi
+# Cesorder Sipariş Portali - B2C ve B2B Gıda Sipariş ve Teslimat Sistemi
 
-Cesformind için geliştirilmiş kapsamlı B2C ve B2B sipariş yönetimi, teslimat takibi ve saha operasyonları platformu.
+Cesorder için geliştirilmiş kapsamlı B2C ve B2B sipariş yönetimi, teslimat takibi ve saha operasyonları platformu.
 
 ## 🚀 Özellikler
 

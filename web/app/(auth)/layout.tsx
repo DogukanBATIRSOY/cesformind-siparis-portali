@@ -5,7 +5,7 @@ export default function AuthLayout({
 }) {
   return (
     <div className="min-h-screen flex items-center justify-center relative overflow-hidden">
-      {/* Cesformind renkleri ile gradient arka plan */}
+      {/* Cesorder renkleri ile gradient arka plan */}
       <div className="absolute inset-0 bg-gradient-to-br from-[#852EC5] via-[#4F79DD] to-[#11D1F8]" />
       
       {/* Animated gradient overlay */}

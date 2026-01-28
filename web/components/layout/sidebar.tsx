@@ -95,7 +95,7 @@ export function Sidebar() {
   return (
     <aside
       className={cn(
-        'bg-white border-r border-gray-200 transition-all duration-300 flex flex-col',
+        'bg-card border-r transition-all duration-300 flex flex-col',
         isOpen ? 'w-64' : 'w-20'
       )}
     >
@@ -105,10 +105,10 @@ export function Sidebar() {
           <Link href="/dashboard" className="flex items-center gap-2">
             <div className="bg-gradient-to-r from-[#852EC5] via-[#4F79DD] to-[#11D1F8] p-2 rounded-lg">
               <Image
-                src="/cesformind-logo.svg"
-                alt="Cesformind"
-                width={120}
-                height={32}
+                src="/cesorder-logo-white.png"
+                alt="Cesorder"
+                width={180}
+                height={50}
                 className="object-contain"
               />
             </div>
@@ -117,10 +117,10 @@ export function Sidebar() {
           <Link href="/dashboard" className="flex items-center justify-center w-full">
             <div className="bg-gradient-to-r from-[#852EC5] to-[#4F79DD] p-2 rounded-lg">
               <Image
-                src="/cesformind-logo.svg"
-                alt="Cesformind"
-                width={24}
-                height={24}
+                src="/cesorder-logo-white.png"
+                alt="Cesorder"
+                width={36}
+                height={36}
                 className="object-contain"
               />
             </div>
@@ -128,7 +128,7 @@ export function Sidebar() {
         )}
         <button
           onClick={toggle}
-          className="p-2 hover:bg-gray-100 rounded-lg transition-colors ml-auto"
+          className="p-2 hover:bg-accent rounded-lg transition-colors ml-auto"
         >
           {isOpen ? (
             <ChevronLeft className="h-5 w-5" />
@@ -149,8 +149,8 @@ export function Sidebar() {
               className={cn(
                 'flex items-center gap-3 px-3 py-2.5 rounded-lg transition-colors',
                 isActive
-                  ? 'bg-primary text-white'
-                  : 'text-gray-600 hover:bg-gray-100'
+                  ? 'bg-primary text-primary-foreground'
+                  : 'text-muted-foreground hover:bg-accent hover:text-foreground'
               )}
             >
               <item.icon className="h-5 w-5 flex-shrink-0" />

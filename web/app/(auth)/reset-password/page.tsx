@@ -93,10 +93,10 @@ export default function ResetPasswordPage() {
           <div className="flex justify-center mb-4">
             <div className="bg-gradient-to-r from-[#852EC5] via-[#4F79DD] to-[#11D1F8] p-4 rounded-xl">
               <Image
-                src="/cesformind-logo.svg"
-                alt="Cesformind"
-                width={180}
-                height={60}
+                src="/cesorder-logo-white.png"
+                alt="Cesorder"
+                width={280}
+                height={90}
                 className="object-contain"
               />
             </div>

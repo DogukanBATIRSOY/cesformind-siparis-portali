@@ -183,7 +183,7 @@ export default function RegisterPage() {
     
     setIsLoading(true)
     try {
-      await authApi.register({
+      const response = await authApi.register({
         ...data,
         // Bireysel üyelik için firma adı olarak ad soyad kullan
         companyName: membershipType === 'INDIVIDUAL' 
@@ -191,8 +191,15 @@ export default function RegisterPage() {
           : data.companyName,
         customerType: membershipType === 'INDIVIDUAL' ? 'INDIVIDUAL' : data.customerType,
       })
-      setIsSuccess(true)
-      toast.success('Başvurunuz alındı!')
+      
+      // Bireysel üyelik için email doğrulama sayfasına yönlendir
+      if (response.data.data?.requiresVerification) {
+        toast.success('Kayıt başarılı! Email doğrulaması gerekiyor.')
+        router.push(`/verify-email?email=${encodeURIComponent(data.email)}`)
+      } else {
+        setIsSuccess(true)
+        toast.success('Başvurunuz alındı!')
+      }
     } catch (error: any) {
       toast.error(error.response?.data?.message || 'Kayıt başarısız')
     } finally {
@@ -250,10 +257,10 @@ export default function RegisterPage() {
           <div className="flex justify-center mb-4">
             <div className="bg-gradient-to-r from-[#852EC5] via-[#4F79DD] to-[#11D1F8] p-3 rounded-xl">
               <Image
-                src="/cesformind-logo.svg"
-                alt="Cesformind"
-                width={160}
-                height={50}
+                src="/cesorder-logo-white.png"
+                alt="Cesorder"
+                width={280}
+                height={90}
                 className="object-contain"
               />
             </div>

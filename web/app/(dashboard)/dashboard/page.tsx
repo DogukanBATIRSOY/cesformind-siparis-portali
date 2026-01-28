@@ -123,49 +123,49 @@ export default function DashboardPage() {
 
       {/* Pending Items */}
       <div className="grid gap-4 md:grid-cols-3">
-        <Card className="border-yellow-200 bg-yellow-50">
+        <Card className="border-yellow-500/30 bg-yellow-500/10 dark:bg-yellow-500/5">
           <CardContent className="pt-6">
             <div className="flex items-center gap-4">
-              <div className="p-3 bg-yellow-100 rounded-full">
-                <Clock className="h-6 w-6 text-yellow-600" />
+              <div className="p-3 bg-yellow-500/20 rounded-full">
+                <Clock className="h-6 w-6 text-yellow-600 dark:text-yellow-400" />
               </div>
               <div>
-                <p className="text-2xl font-bold text-yellow-700">
+                <p className="text-2xl font-bold text-yellow-700 dark:text-yellow-400">
                   {stats?.pending?.orders || 0}
                 </p>
-                <p className="text-sm text-yellow-600">Bekleyen Sipariş</p>
+                <p className="text-sm text-yellow-600 dark:text-yellow-500">Bekleyen Sipariş</p>
               </div>
             </div>
           </CardContent>
         </Card>
 
-        <Card className="border-blue-200 bg-blue-50">
+        <Card className="border-blue-500/30 bg-blue-500/10 dark:bg-blue-500/5">
           <CardContent className="pt-6">
             <div className="flex items-center gap-4">
-              <div className="p-3 bg-blue-100 rounded-full">
-                <Truck className="h-6 w-6 text-blue-600" />
+              <div className="p-3 bg-blue-500/20 rounded-full">
+                <Truck className="h-6 w-6 text-blue-600 dark:text-blue-400" />
               </div>
               <div>
-                <p className="text-2xl font-bold text-blue-700">
+                <p className="text-2xl font-bold text-blue-700 dark:text-blue-400">
                   {stats?.pending?.deliveries || 0}
                 </p>
-                <p className="text-sm text-blue-600">Bekleyen Teslimat</p>
+                <p className="text-sm text-blue-600 dark:text-blue-500">Bekleyen Teslimat</p>
               </div>
             </div>
           </CardContent>
         </Card>
 
-        <Card className="border-red-200 bg-red-50">
+        <Card className="border-red-500/30 bg-red-500/10 dark:bg-red-500/5">
           <CardContent className="pt-6">
             <div className="flex items-center gap-4">
-              <div className="p-3 bg-red-100 rounded-full">
-                <AlertTriangle className="h-6 w-6 text-red-600" />
+              <div className="p-3 bg-red-500/20 rounded-full">
+                <AlertTriangle className="h-6 w-6 text-red-600 dark:text-red-400" />
               </div>
               <div>
-                <p className="text-2xl font-bold text-red-700">
+                <p className="text-2xl font-bold text-red-700 dark:text-red-400">
                   {stats?.pending?.lowStock || 0}
                 </p>
-                <p className="text-sm text-red-600">Düşük Stok Uyarısı</p>
+                <p className="text-sm text-red-600 dark:text-red-500">Düşük Stok Uyarısı</p>
               </div>
             </div>
           </CardContent>

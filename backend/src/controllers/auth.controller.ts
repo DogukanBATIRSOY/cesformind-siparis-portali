@@ -59,6 +59,8 @@ export const login = async (req: Request, res: Response, next: NextFunction) => 
             id: true,
             companyName: true,
             code: true,
+            type: true,
+            status: true,
           },
         },
         warehouse: {
@@ -76,7 +78,28 @@ export const login = async (req: Request, res: Response, next: NextFunction) => 
     }
 
     if (user.status !== 'ACTIVE') {
+      // Email doğrulama ayarı kontrolü - settings'den oku
+      const emailVerificationSetting = await prisma.setting.findUnique({
+        where: { key: 'require_email_verification' },
+      });
+      const requireEmailVerification = emailVerificationSetting?.value === 'true';
+      
+      // Bireysel müşteri ve email doğrulama zorunlu mu kontrol et
+      if (requireEmailVerification && user.customer?.type === 'INDIVIDUAL' && !(user as any).emailVerified) {
+        throw new AppError('Lütfen önce email adresinizi doğrulayın', 401, { requiresVerification: true, email: user.email });
+      }
       throw new AppError('Hesabınız aktif değil', 401);
+    }
+
+    // Email doğrulama ayarı kontrolü
+    const emailVerificationSetting = await prisma.setting.findUnique({
+      where: { key: 'require_email_verification' },
+    });
+    const requireEmailVerification = emailVerificationSetting?.value === 'true';
+    
+    // Bireysel müşteri için email doğrulama kontrolü (aktif olsa bile)
+    if (requireEmailVerification && user.customer?.type === 'INDIVIDUAL' && !(user as any).emailVerified) {
+      throw new AppError('Lütfen önce email adresinizi doğrulayın', 401, { requiresVerification: true, email: user.email });
     }
 
     const isMatch = await bcrypt.compare(password, user.password);
@@ -165,37 +188,74 @@ export const register = async (req: Request, res: Response, next: NextFunction) 
 
     const hashedPassword = await bcrypt.hash(password, 12);
 
-    // Müşteri kodu oluştur
+    // Müşteri kodu oluştur - en yüksek numarayı bul
     const lastCustomer = await prisma.customer.findFirst({
-      orderBy: { createdAt: 'desc' },
+      where: {
+        code: { startsWith: 'MUS-' }
+      },
+      orderBy: { code: 'desc' },
       select: { code: true },
     });
 
-    const nextNumber = lastCustomer
-      ? parseInt(lastCustomer.code.split('-')[1]) + 1
-      : 1;
+    let nextNumber = 1;
+    if (lastCustomer && lastCustomer.code) {
+      const parts = lastCustomer.code.split('-');
+      if (parts.length === 2) {
+        nextNumber = parseInt(parts[1], 10) + 1;
+      }
+    }
     const customerCode = `MUS-${String(nextNumber).padStart(4, '0')}`;
+
+    // Bireysel müşteri mi kontrol et
+    const isIndividual = customerType === 'INDIVIDUAL';
+    
+    // Email doğrulama ayarını kontrol et
+    const emailVerificationSetting = await prisma.setting.findUnique({
+      where: { key: 'require_email_verification' },
+    });
+    const requireEmailVerification = emailVerificationSetting?.value === 'true';
+    
+    // Bireysel müşteriler için email doğrulama kodu oluştur (sadece ayar açıksa)
+    const verificationCode = (isIndividual && requireEmailVerification)
+      ? Math.floor(100000 + Math.random() * 900000).toString() // 6 haneli kod
+      : null;
+    const verificationExpires = (isIndividual && requireEmailVerification)
+      ? new Date(Date.now() + 30 * 60 * 1000) // 30 dakika geçerli
+      : null;
 
     // Transaction ile kullanıcı ve müşteri oluştur
     const result = await prisma.$transaction(async (tx) => {
+      // Müşteri durumunu belirle
+      // Bireysel + email doğrulama kapalı = ACTIVE
+      // Bireysel + email doğrulama açık = PENDING_APPROVAL
+      // Kurumsal = PENDING_APPROVAL (CMS onayı gerekli)
+      const customerStatus = (isIndividual && !requireEmailVerification) 
+        ? 'ACTIVE' 
+        : 'PENDING_APPROVAL';
+      
+      // Kullanıcı durumunu belirle
+      const userStatus = (isIndividual && !requireEmailVerification)
+        ? 'ACTIVE'
+        : (isIndividual ? 'INACTIVE' : 'ACTIVE');
+
       // Müşteri oluştur
       const customer = await tx.customer.create({
         data: {
           code: customerCode,
-          companyName,
-          taxNumber,
-          taxOffice,
+          companyName: companyName || `${firstName} ${lastName}`, // Bireysel için isim kullan
+          taxNumber: isIndividual ? null : taxNumber, // Bireysel için vergi no gerekmez
+          taxOffice: isIndividual ? null : taxOffice,
           type: customerType || 'OTHER',
-          status: 'PENDING_APPROVAL',
+          status: customerStatus,
           contactName: `${firstName} ${lastName}`,
           contactPhone: phone,
           contactEmail: email,
           addresses: {
             create: {
               title: 'Merkez',
-              address,
-              district,
-              city,
+              address: address || '',
+              district: district || '',
+              city: city || '',
               isDefault: true,
               isDelivery: true,
               isBilling: true,
@@ -213,22 +273,60 @@ export const register = async (req: Request, res: Response, next: NextFunction) 
           firstName,
           lastName,
           role: 'CUSTOMER',
-          status: 'ACTIVE',
+          status: userStatus,
           customerId: customer.id,
+          emailVerified: !requireEmailVerification, // Doğrulama kapalıysa direkt verified
+          emailVerificationCode: verificationCode,
+          emailVerificationExpires: verificationExpires,
+          mustChangePassword: false, // Kayıtta şifre zaten belirlendi
         },
       });
 
-      return { user, customer };
+      return { user, customer, verificationCode };
     });
 
-    res.status(201).json({
-      success: true,
-      message: 'Başvurunuz alındı. Onay sonrası bilgilendirileceksiniz.',
-      data: {
-        customerId: result.customer.id,
-        customerCode: result.customer.code,
-      },
-    });
+    // Bireysel müşteri + email doğrulama aktif
+    if (isIndividual && requireEmailVerification && verificationCode) {
+      // TODO: Gerçek email gönderimi için Nodemailer entegrasyonu
+      // Şimdilik konsola yazdırıyoruz
+      console.log(`\n📧 EMAIL DOĞRULAMA KODU`);
+      console.log(`   Email: ${email}`);
+      console.log(`   Kod: ${verificationCode}`);
+      console.log(`   Geçerlilik: 30 dakika\n`);
+      
+      res.status(201).json({
+        success: true,
+        message: 'Kayıt başarılı! Email adresinize gönderilen doğrulama kodunu girin.',
+        data: {
+          customerId: result.customer.id,
+          customerCode: result.customer.code,
+          requiresVerification: true,
+          email: email,
+        },
+      });
+    } else if (isIndividual && !requireEmailVerification) {
+      // Bireysel müşteri + email doğrulama kapalı = direkt giriş yapabilir
+      res.status(201).json({
+        success: true,
+        message: 'Kayıt başarılı! Artık giriş yapabilirsiniz.',
+        data: {
+          customerId: result.customer.id,
+          customerCode: result.customer.code,
+          requiresVerification: false,
+        },
+      });
+    } else {
+      // Kurumsal müşteri - CMS onayı gerekli
+      res.status(201).json({
+        success: true,
+        message: 'Başvurunuz alındı. Onay sonrası bilgilendirileceksiniz.',
+        data: {
+          customerId: result.customer.id,
+          customerCode: result.customer.code,
+          requiresVerification: false,
+        },
+      });
+    }
   } catch (error) {
     next(error);
   }
