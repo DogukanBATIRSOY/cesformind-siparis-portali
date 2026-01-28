@@ -678,11 +678,21 @@ export default function LandingPage() {
                         Sipariş Ver
                       </Button>
                     ) : (
-                      <Link href="/login" className="block">
-                        <Button className="w-full" size="lg">
-                          Sipariş için Giriş Yap
+                      <div className="space-y-2">
+                        <Link href="/login" className="block">
+                          <Button className="w-full" size="lg">
+                            Giriş Yap ve Sipariş Ver
+                          </Button>
+                        </Link>
+                        <Button 
+                          className="w-full" 
+                          size="lg" 
+                          variant="outline"
+                          onClick={() => router.push('/checkout/guest')}
+                        >
+                          Üye Olmadan Devam Et
                         </Button>
-                      </Link>
+                      </div>
                     )}
                   </div>
                 </>

@@ -47,6 +47,7 @@ export default function OrdersPage() {
   const [page, setPage] = useState(1)
   const [search, setSearch] = useState('')
   const [status, setStatus] = useState('')
+  const [orderType, setOrderType] = useState('') // all, guest, member
 
   const { data, isLoading } = useQuery({
     queryKey: ['orders', page, search, status],
@@ -59,8 +60,19 @@ export default function OrdersPage() {
       }),
   })
 
-  const orders = data?.data?.data || []
+  const allOrders = data?.data?.data || []
   const meta = data?.data?.meta
+  
+  // Frontend filtering for order type
+  const orders = allOrders.filter((order: any) => {
+    if (orderType === 'guest') {
+      return order.orderNumber?.startsWith('GST-')
+    }
+    if (orderType === 'member') {
+      return !order.orderNumber?.startsWith('GST-')
+    }
+    return true
+  })
 
   return (
     <div className="space-y-6">
@@ -103,6 +115,15 @@ export default function OrdersPage() {
                   {label}
                 </option>
               ))}
+            </select>
+            <select
+              className="h-10 px-3 border rounded-md bg-background"
+              value={orderType}
+              onChange={(e) => setOrderType(e.target.value)}
+            >
+              <option value="">Tüm Siparişler</option>
+              <option value="guest">🛒 Misafir Siparişleri</option>
+              <option value="member">👤 Üye Siparişleri</option>
             </select>
             <Button variant="outline">
               <Filter className="h-4 w-4 mr-2" />
@@ -150,12 +171,19 @@ export default function OrdersPage() {
                   orders.map((order: any) => (
                     <tr key={order.id} className="border-b hover:bg-muted/50">
                       <td className="p-4">
-                        <Link
-                          href={`/orders/${order.id}`}
-                          className="font-medium text-primary hover:underline"
-                        >
-                          {order.orderNumber}
-                        </Link>
+                        <div className="flex items-center gap-2">
+                          <Link
+                            href={`/orders/${order.id}`}
+                            className="font-medium text-primary hover:underline"
+                          >
+                            {order.orderNumber}
+                          </Link>
+                          {order.orderNumber?.startsWith('GST-') && (
+                            <Badge variant="outline" className="bg-orange-50 text-orange-600 border-orange-200">
+                              Misafir
+                            </Badge>
+                          )}
+                        </div>
                       </td>
                       <td className="p-4">
                         <div>
@@ -164,6 +192,9 @@ export default function OrdersPage() {
                           </p>
                           <p className="text-sm text-muted-foreground">
                             {order.customer?.code}
+                            {order.customer?.code?.startsWith('GUEST-') && (
+                              <span className="ml-1 text-orange-500">(Misafir)</span>
+                            )}
                           </p>
                         </div>
                       </td>
