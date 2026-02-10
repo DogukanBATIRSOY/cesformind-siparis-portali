@@ -18,6 +18,7 @@ import {
   ChevronLeft,
   ChevronRight,
   Boxes,
+  SlidersHorizontal,
 } from 'lucide-react'
 
 const menuItems = [
@@ -74,6 +75,12 @@ const menuItems = [
     href: '/reports',
     icon: BarChart3,
     roles: ['ADMIN', 'SALES_REP'],
+  },
+  {
+    title: 'Filtreler',
+    href: '/filters',
+    icon: SlidersHorizontal,
+    roles: ['ADMIN'],
   },
   {
     title: 'Ayarlar',
