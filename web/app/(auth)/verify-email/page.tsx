@@ -148,11 +148,11 @@ export default function VerifyEmailPage() {
         <CardHeader className="text-center">
           <div className="mx-auto mb-4">
             <Image
-              src="/cesorder-logo-white.png"
-              alt="Cesorder"
-              width={280}
-              height={90}
-              className="h-10 w-auto"
+              src="/t-order.png"
+              alt="T-ORDER"
+              width={200}
+              height={60}
+              className="h-12 w-auto"
             />
           </div>
           <div className="mx-auto w-16 h-16 bg-primary/10 rounded-full flex items-center justify-center mb-4">

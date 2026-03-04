@@ -124,27 +124,23 @@ export function Sidebar() {
       <div className="h-16 flex items-center justify-between px-4 border-b">
         {isOpen ? (
           <Link href="/dashboard" className="flex items-center gap-2">
-            <div className="bg-gradient-to-r from-[#852EC5] via-[#4F79DD] to-[#11D1F8] p-2 rounded-lg">
-              <Image
-                src="/cesorder-logo-white.png"
-                alt="Cesorder"
-                width={180}
-                height={50}
-                className="object-contain"
-              />
-            </div>
+            <Image
+              src="/t-order.png"
+              alt="T-ORDER"
+              width={160}
+              height={45}
+              className="object-contain"
+            />
           </Link>
         ) : (
           <Link href="/dashboard" className="flex items-center justify-center w-full">
-            <div className="bg-gradient-to-r from-[#852EC5] to-[#4F79DD] p-2 rounded-lg">
-              <Image
-                src="/cesorder-logo-white.png"
-                alt="Cesorder"
-                width={36}
-                height={36}
-                className="object-contain"
-              />
-            </div>
+            <Image
+              src="/t-order.png"
+              alt="T-ORDER"
+              width={40}
+              height={40}
+              className="object-contain"
+            />
           </Link>
         )}
         <button

@@ -285,12 +285,12 @@ export default function LandingPage() {
           <div className="flex items-center justify-between h-16">
             {/* Logo - Mobilde görünür, büyük ekranlarda sol panelde */}
             <Link href="/" className="flex items-center gap-2 lg:hidden">
-              <div className="bg-gradient-to-r from-[#852EC5] via-[#4F79DD] to-[#11D1F8] p-2 rounded-lg">
+              <div className="p-2">
                 <Image
-                  src="/cesorder-logo-white.png"
-                  alt="Cesorder"
-                  width={200}
-                  height={60}
+                  src="/t-order.png"
+                  alt="T-ORDER"
+                  width={180}
+                  height={50}
                   className="h-6 w-auto"
                 />
               </div>
@@ -423,10 +423,10 @@ export default function LandingPage() {
           {/* Logo - En üstte */}
           <div className="h-16 flex items-center px-4 border-b bg-white sticky top-0 z-10">
             <Link href="/" className="flex items-center">
-              <div className="bg-gradient-to-r from-[#852EC5] via-[#4F79DD] to-[#11D1F8] p-2 rounded-lg">
+              <div className="p-2">
                 <Image
-                  src="/cesorder-logo-white.png"
-                  alt="Cesorder"
+                  src="/t-order.png"
+                  alt="T-ORDER"
                   width={160}
                   height={45}
                   className="h-8 w-auto"
@@ -971,10 +971,10 @@ export default function LandingPage() {
               <div className="grid grid-cols-1 md:grid-cols-4 gap-8">
                 <div className="md:col-span-2">
                   <div className="flex items-center gap-2 mb-4">
-                    <div className="bg-gradient-to-r from-[#852EC5] via-[#4F79DD] to-[#11D1F8] p-2 rounded-lg">
+                    <div className="p-2">
                       <Image
-                        src="/cesorder-logo-white.png"
-                        alt="Cesorder"
+                        src="/t-order.png"
+                        alt="T-ORDER"
                         width={120}
                         height={32}
                         className="h-6 w-auto"

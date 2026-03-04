@@ -99,9 +99,9 @@ interface SmsSettings {
 }
 
 const defaultCompanySettings: CompanySettings = {
-  name: 'Cesorder Sipariş Sistemi',
+  name: 'T-ORDER Sipariş Sistemi',
   phone: '0212 123 45 67',
-  email: 'info@cesorder.com',
+  email: 'info@t-order.com',
   address: 'İstanbul, Türkiye',
   taxNumber: '1234567890',
   taxOffice: 'Kadıköy',
@@ -138,7 +138,7 @@ const defaultEmailSettings: EmailSettings = {
   smtpPort: '587',
   smtpUser: '',
   smtpPassword: '',
-  fromName: 'Cesorder',
+  fromName: 'T-ORDER',
   fromEmail: '',
 }
 
@@ -705,7 +705,7 @@ export default function SettingsPage() {
                       <div className="space-y-2">
                         <label className="text-sm font-medium">Gönderen Adı</label>
                         <Input
-                          placeholder="Cesorder"
+                          placeholder="T-ORDER"
                           value={emailSettings.fromName}
                           onChange={(e) => setEmailSettings({ ...emailSettings, fromName: e.target.value })}
                         />
@@ -713,7 +713,7 @@ export default function SettingsPage() {
                       <div className="space-y-2">
                         <label className="text-sm font-medium">Gönderen Email</label>
                         <Input
-                          placeholder="noreply@cesorder.com"
+                          placeholder="noreply@t-order.com"
                           value={emailSettings.fromEmail}
                           onChange={(e) => setEmailSettings({ ...emailSettings, fromEmail: e.target.value })}
                         />
@@ -953,7 +953,7 @@ export default function SettingsPage() {
               </CardHeader>
               <CardContent className="space-y-4">
                 <div className="grid gap-4">
-                  <InfoRow label="Uygulama Adı" value="Cesorder Sipariş Sistemi" />
+                  <InfoRow label="Uygulama Adı" value="T-ORDER Sipariş Sistemi" />
                   <InfoRow label="Versiyon" value="1.0.0" />
                   <InfoRow label="Ortam" value="Production" />
                   <InfoRow label="Son Güncelleme" value={new Date().toLocaleDateString('tr-TR')} />

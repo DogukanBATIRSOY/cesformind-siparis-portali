@@ -9,7 +9,7 @@ async function main() {
   // Super Admin kullanıcı - Şifre: Admin123!
   const adminPassword = await bcrypt.hash('Admin123!', 12);
   const admin = await prisma.user.upsert({
-    where: { email: 'admin@cesorder.com' },
+    where: { email: 'admin@t-order.com' },
     update: {
       password: adminPassword,
       phone: '5551000001',
@@ -17,7 +17,7 @@ async function main() {
       role: 'SUPER_ADMIN',
     },
     create: {
-      email: 'admin@cesorder.com',
+      email: 'admin@t-order.com',
       phone: '5551000001',
       password: adminPassword,
       firstName: 'Super',
@@ -65,7 +65,7 @@ async function main() {
   // Depo görevlisi - Şifre: Depo123!
   const warehouseUserPassword = await bcrypt.hash('Depo123!', 12);
   const warehouseUser = await prisma.user.upsert({
-    where: { email: 'depo@cesorder.com' },
+    where: { email: 'depo@t-order.com' },
     update: {
       password: warehouseUserPassword,
       phone: '5551000002',
@@ -73,7 +73,7 @@ async function main() {
       role: 'WAREHOUSE_USER',
     },
     create: {
-      email: 'depo@cesorder.com',
+      email: 'depo@t-order.com',
       phone: '5551000002',
       password: warehouseUserPassword,
       firstName: 'Ahmet',
@@ -107,7 +107,7 @@ async function main() {
   // Satış temsilcisi (Plasiyer) - Şifre: Satis123!
   const salesRepPassword = await bcrypt.hash('Satis123!', 12);
   const salesRep = await prisma.user.upsert({
-    where: { email: 'satis@cesorder.com' },
+    where: { email: 'satis@t-order.com' },
     update: {
       password: salesRepPassword,
       phone: '5551000003',
@@ -115,7 +115,7 @@ async function main() {
       role: 'SALES_REP',
     },
     create: {
-      email: 'satis@cesorder.com',
+      email: 'satis@t-order.com',
       phone: '5551000003',
       password: salesRepPassword,
       firstName: 'Mehmet',
@@ -149,7 +149,7 @@ async function main() {
   // Teslimatçı - Şifre: Teslimat123!
   const deliveryPassword = await bcrypt.hash('Teslimat123!', 12);
   const deliveryUser = await prisma.user.upsert({
-    where: { email: 'teslimat@cesorder.com' },
+    where: { email: 'teslimat@t-order.com' },
     update: {
       password: deliveryPassword,
       phone: '5551000004',
@@ -157,7 +157,7 @@ async function main() {
       role: 'DELIVERY',
     },
     create: {
-      email: 'teslimat@cesorder.com',
+      email: 'teslimat@t-order.com',
       phone: '5551000004',
       password: deliveryPassword,
       firstName: 'Ali',
@@ -188,7 +188,7 @@ async function main() {
   // Bayi Admin - Şifre: Bayi123!
   const dealerAdminPassword = await bcrypt.hash('Bayi123!', 12);
   const dealerAdmin = await prisma.user.upsert({
-    where: { email: 'bayi@cesorder.com' },
+    where: { email: 'bayi@t-order.com' },
     update: {
       password: dealerAdminPassword,
       phone: '5551000005',
@@ -196,7 +196,7 @@ async function main() {
       role: 'DEALER_ADMIN',
     },
     create: {
-      email: 'bayi@cesorder.com',
+      email: 'bayi@t-order.com',
       phone: '5551000005',
       password: dealerAdminPassword,
       firstName: 'Bayi',
@@ -912,9 +912,9 @@ async function main() {
 
   // Sistem ayarları
   const settings = [
-    { key: 'company_name', value: 'Cesorder Sipariş Sistemi', type: 'string', group: 'general' },
+    { key: 'company_name', value: 'T-ORDER Sipariş Sistemi', type: 'string', group: 'general' },
     { key: 'company_phone', value: '0212 123 45 67', type: 'string', group: 'general' },
-    { key: 'company_email', value: 'info@cesorder.com', type: 'string', group: 'general' },
+    { key: 'company_email', value: 'info@t-order.com', type: 'string', group: 'general' },
     { key: 'default_tax_rate', value: '18', type: 'number', group: 'finance' },
     { key: 'currency', value: 'TRY', type: 'string', group: 'finance' },
     { key: 'order_prefix', value: 'SIP', type: 'string', group: 'orders' },
@@ -927,7 +927,7 @@ async function main() {
     { key: 'smtp_port', value: '587', type: 'string', group: 'email' },
     { key: 'smtp_user', value: '', type: 'string', group: 'email' },
     { key: 'smtp_password', value: '', type: 'string', group: 'email' },
-    { key: 'smtp_from_name', value: 'Cesorder', type: 'string', group: 'email' },
+    { key: 'smtp_from_name', value: 'T-ORDER', type: 'string', group: 'email' },
     { key: 'smtp_from_email', value: '', type: 'string', group: 'email' },
     // SMS Ayarları
     { key: 'sms_enabled', value: 'false', type: 'boolean', group: 'sms' },
@@ -950,10 +950,10 @@ async function main() {
   console.log('🎉 Seed completed successfully!');
   console.log('');
   console.log('📋 Test Credentials:');
-  console.log('   Admin: admin@cesorder.com / Admin123!');
-  console.log('   Depo: depo@cesorder.com / Depo123!');
-  console.log('   Satış: satis@cesorder.com / Satis123!');
-  console.log('   Teslimat: teslimat@cesorder.com / Teslimat123!');
+  console.log('   Admin: admin@t-order.com / Admin123!');
+  console.log('   Depo: depo@t-order.com / Depo123!');
+  console.log('   Satış: satis@t-order.com / Satis123!');
+  console.log('   Teslimat: teslimat@t-order.com / Teslimat123!');
 }
 
 main()

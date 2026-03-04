@@ -207,8 +207,8 @@ export default function GuestCheckoutPage() {
             </Button>
             <div className="flex items-center gap-3">
               <Image
-                src="/cesorder-logo-white.png"
-                alt="Cesorder"
+                src="/t-order.png"
+                alt="T-ORDER"
                 width={120}
                 height={40}
                 className="object-contain"

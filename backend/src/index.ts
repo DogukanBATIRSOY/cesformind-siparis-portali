@@ -107,7 +107,7 @@ async function initializeSettings() {
 
 // Start server
 app.listen(PORT, async () => {
-  console.log(`🚀 Cesorder Sipariş Sistemi API Server running on port ${PORT}`);
+  console.log(`🚀 T-ORDER Sipariş Sistemi API Server running on port ${PORT}`);
   console.log(`📚 Environment: ${process.env.NODE_ENV || 'development'}`);
   await initializeSettings();
 });

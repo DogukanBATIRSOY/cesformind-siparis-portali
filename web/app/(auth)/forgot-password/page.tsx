@@ -50,10 +50,10 @@ export default function ForgotPasswordPage() {
       <Card className="w-full max-w-md shadow-2xl border-0 bg-white/95 backdrop-blur-sm">
         <CardHeader className="space-y-1 text-center pb-2">
           <div className="flex justify-center mb-4">
-            <div className="bg-gradient-to-r from-[#852EC5] via-[#4F79DD] to-[#11D1F8] p-4 rounded-xl">
+            <div className="p-4">
               <Image
-                src="/cesorder-logo-white.png"
-                alt="Cesorder"
+                src="/t-order.png"
+                alt="T-ORDER"
                 width={280}
                 height={90}
                 className="object-contain"
