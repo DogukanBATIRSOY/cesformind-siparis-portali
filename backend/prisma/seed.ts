@@ -6,7 +6,7 @@ const prisma = new PrismaClient();
 async function main() {
   console.log('🌱 Seeding database...');
 
-  // Admin kullanıcı - Şifre: Admin123!
+  // Super Admin kullanıcı - Şifre: Admin123!
   const adminPassword = await bcrypt.hash('Admin123!', 12);
   const admin = await prisma.user.upsert({
     where: { email: 'admin@cesorder.com' },
@@ -14,19 +14,38 @@ async function main() {
       password: adminPassword,
       phone: '5551000001',
       mustChangePassword: false,
+      role: 'SUPER_ADMIN',
     },
     create: {
       email: 'admin@cesorder.com',
       phone: '5551000001',
       password: adminPassword,
-      firstName: 'Admin',
-      lastName: 'User',
-      role: 'ADMIN',
+      firstName: 'Super',
+      lastName: 'Admin',
+      role: 'SUPER_ADMIN',
       status: 'ACTIVE',
-      mustChangePassword: false, // Test için false
+      mustChangePassword: false,
     },
   });
-  console.log('✅ Admin user created:', admin.email);
+  console.log('✅ Super Admin user created:', admin.email);
+
+  // Super Admin için tüm izinleri oluştur
+  const modules = ['customers', 'products', 'orders', 'deliveries', 'payments', 'warehouses', 'reports', 'users', 'settings'];
+  for (const module of modules) {
+    await prisma.userPermission.upsert({
+      where: { userId_module: { userId: admin.id, module } },
+      update: { canView: true, canCreate: true, canEdit: true, canDelete: true },
+      create: {
+        userId: admin.id,
+        module,
+        canView: true,
+        canCreate: true,
+        canEdit: true,
+        canDelete: true,
+      },
+    });
+  }
+  console.log('✅ Super Admin permissions created');
 
   // Varsayılan depo
   const warehouse = await prisma.warehouse.upsert({
@@ -51,6 +70,7 @@ async function main() {
       password: warehouseUserPassword,
       phone: '5551000002',
       mustChangePassword: false,
+      role: 'WAREHOUSE_USER',
     },
     create: {
       email: 'depo@cesorder.com',
@@ -58,15 +78,33 @@ async function main() {
       password: warehouseUserPassword,
       firstName: 'Ahmet',
       lastName: 'Depo',
-      role: 'WAREHOUSE',
+      role: 'WAREHOUSE_USER',
       status: 'ACTIVE',
       warehouseId: warehouse.id,
       mustChangePassword: false,
+      createdById: admin.id,
     },
   });
   console.log('✅ Warehouse user created:', warehouseUser.email);
 
-  // Satış temsilcisi - Şifre: Satis123!
+  // Depo kullanıcısı için izinleri oluştur
+  const warehousePermissions = {
+    products: { canView: true, canCreate: false, canEdit: true, canDelete: false },
+    orders: { canView: true, canCreate: false, canEdit: true, canDelete: false },
+    deliveries: { canView: true, canCreate: true, canEdit: true, canDelete: false },
+    warehouses: { canView: true, canCreate: false, canEdit: true, canDelete: false },
+    reports: { canView: true, canCreate: false, canEdit: false, canDelete: false },
+  };
+  for (const [module, perms] of Object.entries(warehousePermissions)) {
+    await prisma.userPermission.upsert({
+      where: { userId_module: { userId: warehouseUser.id, module } },
+      update: perms,
+      create: { userId: warehouseUser.id, module, ...perms },
+    });
+  }
+  console.log('✅ Warehouse user permissions created');
+
+  // Satış temsilcisi (Plasiyer) - Şifre: Satis123!
   const salesRepPassword = await bcrypt.hash('Satis123!', 12);
   const salesRep = await prisma.user.upsert({
     where: { email: 'satis@cesorder.com' },
@@ -74,19 +112,39 @@ async function main() {
       password: salesRepPassword,
       phone: '5551000003',
       mustChangePassword: false,
+      role: 'SALES_REP',
     },
     create: {
       email: 'satis@cesorder.com',
       phone: '5551000003',
       password: salesRepPassword,
       firstName: 'Mehmet',
-      lastName: 'Satış',
+      lastName: 'Plasiyer',
       role: 'SALES_REP',
       status: 'ACTIVE',
       mustChangePassword: false,
+      createdById: admin.id,
     },
   });
   console.log('✅ Sales rep created:', salesRep.email);
+
+  // Plasiyer için izinleri oluştur
+  const salesRepPermissions = {
+    customers: { canView: true, canCreate: true, canEdit: true, canDelete: false },
+    products: { canView: true, canCreate: false, canEdit: false, canDelete: false },
+    orders: { canView: true, canCreate: true, canEdit: true, canDelete: false },
+    deliveries: { canView: true, canCreate: false, canEdit: false, canDelete: false },
+    payments: { canView: true, canCreate: true, canEdit: false, canDelete: false },
+    reports: { canView: true, canCreate: false, canEdit: false, canDelete: false },
+  };
+  for (const [module, perms] of Object.entries(salesRepPermissions)) {
+    await prisma.userPermission.upsert({
+      where: { userId_module: { userId: salesRep.id, module } },
+      update: perms,
+      create: { userId: salesRep.id, module, ...perms },
+    });
+  }
+  console.log('✅ Sales rep permissions created');
 
   // Teslimatçı - Şifre: Teslimat123!
   const deliveryPassword = await bcrypt.hash('Teslimat123!', 12);
@@ -96,6 +154,7 @@ async function main() {
       password: deliveryPassword,
       phone: '5551000004',
       mustChangePassword: false,
+      role: 'DELIVERY',
     },
     create: {
       email: 'teslimat@cesorder.com',
@@ -106,9 +165,70 @@ async function main() {
       role: 'DELIVERY',
       status: 'ACTIVE',
       mustChangePassword: false,
+      createdById: admin.id,
     },
   });
   console.log('✅ Delivery user created:', deliveryUser.email);
+
+  // Teslimatçı için izinleri oluştur
+  const deliveryPermissions = {
+    customers: { canView: true, canCreate: false, canEdit: false, canDelete: false },
+    orders: { canView: true, canCreate: false, canEdit: false, canDelete: false },
+    deliveries: { canView: true, canCreate: false, canEdit: true, canDelete: false },
+  };
+  for (const [module, perms] of Object.entries(deliveryPermissions)) {
+    await prisma.userPermission.upsert({
+      where: { userId_module: { userId: deliveryUser.id, module } },
+      update: perms,
+      create: { userId: deliveryUser.id, module, ...perms },
+    });
+  }
+  console.log('✅ Delivery user permissions created');
+
+  // Bayi Admin - Şifre: Bayi123!
+  const dealerAdminPassword = await bcrypt.hash('Bayi123!', 12);
+  const dealerAdmin = await prisma.user.upsert({
+    where: { email: 'bayi@cesorder.com' },
+    update: {
+      password: dealerAdminPassword,
+      phone: '5551000005',
+      mustChangePassword: false,
+      role: 'DEALER_ADMIN',
+    },
+    create: {
+      email: 'bayi@cesorder.com',
+      phone: '5551000005',
+      password: dealerAdminPassword,
+      firstName: 'Bayi',
+      lastName: 'Admin',
+      role: 'DEALER_ADMIN',
+      status: 'ACTIVE',
+      mustChangePassword: false,
+      createdById: admin.id,
+    },
+  });
+  console.log('✅ Dealer Admin created:', dealerAdmin.email);
+
+  // Bayi Admin için izinleri oluştur
+  const dealerAdminPermissions = {
+    customers: { canView: true, canCreate: true, canEdit: true, canDelete: false },
+    products: { canView: true, canCreate: true, canEdit: true, canDelete: false },
+    orders: { canView: true, canCreate: true, canEdit: true, canDelete: false },
+    deliveries: { canView: true, canCreate: true, canEdit: true, canDelete: false },
+    payments: { canView: true, canCreate: true, canEdit: true, canDelete: false },
+    warehouses: { canView: true, canCreate: false, canEdit: false, canDelete: false },
+    reports: { canView: true, canCreate: false, canEdit: false, canDelete: false },
+    users: { canView: true, canCreate: true, canEdit: true, canDelete: false },
+    settings: { canView: true, canCreate: false, canEdit: true, canDelete: false },
+  };
+  for (const [module, perms] of Object.entries(dealerAdminPermissions)) {
+    await prisma.userPermission.upsert({
+      where: { userId_module: { userId: dealerAdmin.id, module } },
+      update: perms,
+      create: { userId: dealerAdmin.id, module, ...perms },
+    });
+  }
+  console.log('✅ Dealer Admin permissions created');
 
   // Kategoriler - Restoran Menüsü (Picsum placeholder görselleri)
   const categories = [

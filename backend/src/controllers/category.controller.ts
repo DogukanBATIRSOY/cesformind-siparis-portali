@@ -183,13 +183,26 @@ export const createCategory = async (req: AuthRequest, res: Response, next: Next
       slug = `${slug}-${Date.now()}`;
     }
 
+    // parentId boş string veya geçersizse null yap
+    const validParentId = parentId && parentId.trim() !== '' ? parentId : null;
+
+    // Eğer parentId varsa, var olup olmadığını kontrol et
+    if (validParentId) {
+      const parentExists = await prisma.category.findUnique({
+        where: { id: validParentId },
+      });
+      if (!parentExists) {
+        throw new AppError('Üst kategori bulunamadı', 400);
+      }
+    }
+
     const category = await prisma.category.create({
       data: {
         name,
         slug,
         description,
         image,
-        parentId,
+        parentId: validParentId,
         sortOrder: sortOrder || 0,
       },
     });
@@ -228,9 +241,22 @@ export const updateCategory = async (req: AuthRequest, res: Response, next: Next
       }
     }
 
+    // parentId boş string veya geçersizse null yap
+    const validParentId = parentId && parentId.trim() !== '' ? parentId : null;
+
     // Kendisini parent olarak seçemez
-    if (parentId === id) {
+    if (validParentId === id) {
       throw new AppError('Kategori kendisinin üst kategorisi olamaz', 400);
+    }
+
+    // Eğer parentId varsa, var olup olmadığını kontrol et
+    if (validParentId) {
+      const parentExists = await prisma.category.findUnique({
+        where: { id: validParentId },
+      });
+      if (!parentExists) {
+        throw new AppError('Üst kategori bulunamadı', 400);
+      }
     }
 
     const category = await prisma.category.update({
@@ -240,7 +266,7 @@ export const updateCategory = async (req: AuthRequest, res: Response, next: Next
         slug,
         description,
         image,
-        parentId,
+        parentId: validParentId,
         sortOrder,
         isActive,
       },

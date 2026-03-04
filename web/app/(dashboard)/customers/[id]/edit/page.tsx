@@ -31,6 +31,8 @@ import {
   Banknote,
   UserCheck,
   Shield,
+  Plus,
+  Trash2,
 } from 'lucide-react'
 
 const statusColors: Record<string, string> = {
@@ -82,6 +84,21 @@ export default function CustomerEditPage() {
     notes: '',
   })
 
+  // Adres yönetimi state
+  const [addresses, setAddresses] = useState<any[]>([])
+  const [showAddAddressModal, setShowAddAddressModal] = useState(false)
+  const [newAddress, setNewAddress] = useState({
+    title: '',
+    address: '',
+    district: '',
+    city: '',
+    postalCode: '',
+    isDefault: false,
+    isDelivery: true,
+    isBilling: false,
+    deliveryNotes: '',
+  })
+
   // Onay formu state
   const [approvalData, setApprovalData] = useState({
     creditLimit: 50000,
@@ -125,6 +142,7 @@ export default function CustomerEditPage() {
         paymentTermDays: customer.paymentTermDays || 30,
         salesRepId: customer.salesRepId || '',
       })
+      setAddresses(customer.addresses || [])
     }
   }, [customer])
 
@@ -183,7 +201,49 @@ export default function CustomerEditPage() {
   })
 
   const handleSave = () => {
-    updateMutation.mutate(formData)
+    updateMutation.mutate({
+      ...formData,
+      addresses: addresses,
+    })
+  }
+
+  const handleAddAddress = () => {
+    if (!newAddress.address || !newAddress.city) {
+      toast.error('Lütfen adres ve şehir bilgilerini girin')
+      return
+    }
+    
+    const addressToAdd = {
+      ...newAddress,
+      id: `temp-${Date.now()}`,
+    }
+    
+    setAddresses([...addresses, addressToAdd])
+    setNewAddress({
+      title: '',
+      address: '',
+      district: '',
+      city: '',
+      postalCode: '',
+      isDefault: false,
+      isDelivery: true,
+      isBilling: false,
+      deliveryNotes: '',
+    })
+    setShowAddAddressModal(false)
+    toast.success('Adres eklendi. Kaydetmek için "Kaydet" butonuna tıklayın.')
+  }
+
+  const handleDeleteAddress = (addressId: string) => {
+    setAddresses(addresses.filter(a => a.id !== addressId))
+    toast.success('Adres silindi. Kaydetmek için "Kaydet" butonuna tıklayın.')
+  }
+
+  const handleSetDefaultAddress = (addressId: string) => {
+    setAddresses(addresses.map(a => ({
+      ...a,
+      isDefault: a.id === addressId,
+    })))
   }
 
   const handleApprove = () => {
@@ -438,28 +498,85 @@ export default function CustomerEditPage() {
             </CardContent>
           </Card>
 
-          {/* Adres Bilgileri */}
+          {/* Fatura Adresi */}
           <Card>
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
-                <MapPin className="h-5 w-5" />
-                Adres Bilgileri
+                <FileText className="h-5 w-5" />
+                Fatura Adresi
               </CardTitle>
             </CardHeader>
             <CardContent>
-              {customer.addresses && customer.addresses.length > 0 ? (
+              {customer.addresses && customer.addresses.filter((a: any) => a.isBilling).length > 0 ? (
                 <div className="space-y-4">
-                  {customer.addresses.map((address: any, index: number) => (
+                  {customer.addresses.filter((a: any) => a.isBilling).map((address: any) => (
+                    <div
+                      key={address.id}
+                      className="p-4 rounded-lg border border-blue-200 bg-blue-50/50"
+                    >
+                      <div className="flex items-start justify-between">
+                        <div>
+                          <div className="flex items-center gap-2">
+                            <p className="font-medium">{address.title || 'Fatura Adresi'}</p>
+                            <Badge variant="outline" className="text-xs bg-blue-100 text-blue-700 border-blue-300">
+                              Fatura
+                            </Badge>
+                          </div>
+                          <p className="text-sm text-muted-foreground mt-1">
+                            {address.address}
+                          </p>
+                          <p className="text-sm text-muted-foreground">
+                            {address.district} / {address.city}
+                          </p>
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <p className="text-muted-foreground text-center py-4">
+                  Fatura adresi bulunmuyor
+                </p>
+              )}
+            </CardContent>
+          </Card>
+
+          {/* Teslimat Adresleri */}
+          <Card>
+            <CardHeader className="flex flex-row items-center justify-between">
+              <CardTitle className="flex items-center gap-2">
+                <MapPin className="h-5 w-5" />
+                Teslimat Adresleri
+              </CardTitle>
+              {isEditing && (
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setShowAddAddressModal(true)}
+                >
+                  <Plus className="h-4 w-4 mr-1" />
+                  Yeni Adres
+                </Button>
+              )}
+            </CardHeader>
+            <CardContent>
+              {addresses.filter((a: any) => a.isDelivery).length > 0 ? (
+                <div className="space-y-4">
+                  {addresses.filter((a: any) => a.isDelivery).map((address: any, index: number) => (
                     <div
                       key={address.id}
                       className={`p-4 rounded-lg border ${address.isDefault ? 'border-primary bg-primary/5' : ''}`}
                     >
                       <div className="flex items-start justify-between">
-                        <div>
+                        <div className="flex-1">
                           <div className="flex items-center gap-2">
-                            <p className="font-medium">{address.title}</p>
+                            <p className="font-medium">
+                              Teslimat Adresi {index + 1}
+                              {address.title && ` - ${address.title}`}
+                            </p>
                             {address.isDefault && (
-                              <Badge variant="outline" className="text-xs">Varsayılan</Badge>
+                              <Badge variant="default" className="text-xs">Varsayılan</Badge>
                             )}
                           </div>
                           <p className="text-sm text-muted-foreground mt-1">
@@ -474,22 +591,49 @@ export default function CustomerEditPage() {
                             </p>
                           )}
                         </div>
-                        <div className="flex gap-1">
-                          {address.isDelivery && (
-                            <Badge variant="secondary" className="text-xs">Teslimat</Badge>
-                          )}
-                          {address.isBilling && (
-                            <Badge variant="secondary" className="text-xs">Fatura</Badge>
-                          )}
-                        </div>
+                        {isEditing && (
+                          <div className="flex items-center gap-2">
+                            {!address.isDefault && (
+                              <Button
+                                type="button"
+                                variant="ghost"
+                                size="sm"
+                                onClick={() => handleSetDefaultAddress(address.id)}
+                              >
+                                Varsayılan Yap
+                              </Button>
+                            )}
+                            <Button
+                              type="button"
+                              variant="ghost"
+                              size="icon"
+                              className="text-destructive hover:text-destructive"
+                              onClick={() => handleDeleteAddress(address.id)}
+                            >
+                              <Trash2 className="h-4 w-4" />
+                            </Button>
+                          </div>
+                        )}
                       </div>
                     </div>
                   ))}
                 </div>
               ) : (
-                <p className="text-muted-foreground text-center py-4">
-                  Kayıtlı adres bulunmuyor
-                </p>
+                <div className="text-center py-4">
+                  <p className="text-muted-foreground">Teslimat adresi bulunmuyor</p>
+                  {isEditing && (
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="sm"
+                      className="mt-2"
+                      onClick={() => setShowAddAddressModal(true)}
+                    >
+                      <Plus className="h-4 w-4 mr-1" />
+                      İlk Adresi Ekle
+                    </Button>
+                  )}
+                </div>
               )}
             </CardContent>
           </Card>
@@ -842,6 +986,124 @@ export default function CustomerEditPage() {
                   disabled={rejectMutation.isPending || !rejectReason.trim()}
                 >
                   {rejectMutation.isPending ? 'Reddediliyor...' : 'Reddet'}
+                </Button>
+              </div>
+            </CardContent>
+          </Card>
+        </div>
+      )}
+
+      {/* Yeni Adres Ekleme Modal */}
+      {showAddAddressModal && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
+          <Card className="w-full max-w-lg mx-4 max-h-[90vh] overflow-y-auto">
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <MapPin className="h-5 w-5" />
+                Yeni Teslimat Adresi
+              </CardTitle>
+              <CardDescription>
+                Müşteri için yeni teslimat adresi ekleyin
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div className="space-y-2">
+                <label className="text-sm font-medium">Adres Başlığı</label>
+                <Input
+                  placeholder="Örn: Merkez, Şube 1, Depo..."
+                  value={newAddress.title}
+                  onChange={(e) => setNewAddress({ ...newAddress, title: e.target.value })}
+                />
+              </div>
+
+              <div className="space-y-2">
+                <label className="text-sm font-medium">Adres *</label>
+                <textarea
+                  className="w-full h-20 px-3 py-2 border rounded-md bg-background resize-none"
+                  placeholder="Tam adres..."
+                  value={newAddress.address}
+                  onChange={(e) => setNewAddress({ ...newAddress, address: e.target.value })}
+                />
+              </div>
+
+              <div className="grid grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <label className="text-sm font-medium">İlçe</label>
+                  <Input
+                    placeholder="İlçe"
+                    value={newAddress.district}
+                    onChange={(e) => setNewAddress({ ...newAddress, district: e.target.value })}
+                  />
+                </div>
+                <div className="space-y-2">
+                  <label className="text-sm font-medium">Şehir *</label>
+                  <Input
+                    placeholder="Şehir"
+                    value={newAddress.city}
+                    onChange={(e) => setNewAddress({ ...newAddress, city: e.target.value })}
+                  />
+                </div>
+              </div>
+
+              <div className="space-y-2">
+                <label className="text-sm font-medium">Posta Kodu</label>
+                <Input
+                  placeholder="Posta kodu"
+                  value={newAddress.postalCode}
+                  onChange={(e) => setNewAddress({ ...newAddress, postalCode: e.target.value })}
+                />
+              </div>
+
+              <div className="space-y-2">
+                <label className="text-sm font-medium">Teslimat Notları</label>
+                <Input
+                  placeholder="Örn: Arka kapıdan teslim..."
+                  value={newAddress.deliveryNotes}
+                  onChange={(e) => setNewAddress({ ...newAddress, deliveryNotes: e.target.value })}
+                />
+              </div>
+
+              <div className="flex items-center gap-4">
+                <label className="flex items-center gap-2">
+                  <input
+                    type="checkbox"
+                    checked={newAddress.isDefault}
+                    onChange={(e) => setNewAddress({ ...newAddress, isDefault: e.target.checked })}
+                    className="rounded"
+                  />
+                  <span className="text-sm">Varsayılan adres olarak ayarla</span>
+                </label>
+              </div>
+
+              <div className="flex gap-3 pt-4">
+                <Button
+                  type="button"
+                  variant="outline"
+                  className="flex-1"
+                  onClick={() => {
+                    setShowAddAddressModal(false)
+                    setNewAddress({
+                      title: '',
+                      address: '',
+                      district: '',
+                      city: '',
+                      postalCode: '',
+                      isDefault: false,
+                      isDelivery: true,
+                      isBilling: false,
+                      deliveryNotes: '',
+                    })
+                  }}
+                >
+                  İptal
+                </Button>
+                <Button
+                  type="button"
+                  className="flex-1"
+                  onClick={handleAddAddress}
+                >
+                  <Plus className="h-4 w-4 mr-2" />
+                  Ekle
                 </Button>
               </div>
             </CardContent>

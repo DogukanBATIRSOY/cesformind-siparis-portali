@@ -1,4 +1,5 @@
 import { Response, NextFunction } from 'express';
+import bcrypt from 'bcryptjs';
 import { prisma } from '../index.js';
 import { AppError } from '../middleware/error.middleware.js';
 import { AuthRequest } from '../middleware/auth.middleware.js';
@@ -23,8 +24,25 @@ export const getCustomers = async (req: AuthRequest, res: Response, next: NextFu
 
     const where: any = {};
 
+    // Bayi admin sadece kendi müşterisine bağlı müşterileri görsün
+    if (req.user?.role === 'DEALER_ADMIN') {
+      // Bayi admin'in customerId'sini bul
+      const dealerUser = await prisma.user.findUnique({
+        where: { id: req.user.id },
+        select: { customerId: true },
+      });
+      
+      if (dealerUser?.customerId) {
+        // Bayi'nin oluşturduğu müşterileri filtrele (salesRepId üzerinden)
+        // veya bayi'nin kendisi ile ilişkili müşterileri göster
+        where.OR = [
+          { salesRepId: req.user.id },
+          { id: dealerUser.customerId },
+        ];
+      }
+    }
     // Satış temsilcisi sadece kendi müşterilerini görsün
-    if (req.user?.role === 'SALES_REP') {
+    else if (req.user?.role === 'SALES_REP') {
       where.salesRepId = req.user.id;
     } else if (salesRepId) {
       where.salesRepId = salesRepId;
@@ -172,7 +190,12 @@ export const createCustomer = async (req: AuthRequest, res: Response, next: Next
       address,
       district,
       city,
+      addresses,
       notes,
+      // Bayi için kullanıcı bilgileri
+      createUser,
+      userEmail,
+      userPassword,
     } = req.body;
 
     // Vergi no kontrolü
@@ -183,6 +206,29 @@ export const createCustomer = async (req: AuthRequest, res: Response, next: Next
 
       if (existingTax) {
         throw new AppError('Bu vergi numarası zaten kayıtlı', 400);
+      }
+    }
+
+    // Bayi için kullanıcı bilgisi kontrolü
+    if (type === 'DEALER' && createUser) {
+      if (!userEmail || !userPassword) {
+        throw new AppError('Bayi için email ve şifre zorunludur', 400);
+      }
+
+      // Email kontrolü
+      const existingEmail = await prisma.user.findUnique({
+        where: { email: userEmail },
+      });
+      if (existingEmail) {
+        throw new AppError('Bu email adresi zaten kullanılıyor', 400);
+      }
+
+      // Telefon kontrolü
+      const existingPhone = await prisma.user.findUnique({
+        where: { phone: contactPhone },
+      });
+      if (existingPhone) {
+        throw new AppError('Bu telefon numarası zaten kullanılıyor', 400);
       }
     }
 
@@ -197,44 +243,121 @@ export const createCustomer = async (req: AuthRequest, res: Response, next: Next
       : 1;
     const customerCode = `MUS-${String(nextNumber).padStart(4, '0')}`;
 
-    const customer = await prisma.customer.create({
-      data: {
-        code: customerCode,
-        companyName,
-        taxNumber,
-        taxOffice,
-        type: type as CustomerType,
-        status: 'ACTIVE',
-        contactName,
-        contactPhone,
-        contactEmail,
-        creditLimit: creditLimit || 0,
-        paymentTermDays: paymentTermDays || 0,
-        priceGroupId,
-        salesRepId: req.user?.role === 'SALES_REP' ? req.user.id : undefined,
-        notes,
-        addresses: address
-          ? {
-              create: {
-                title: 'Merkez',
-                address,
-                district,
-                city,
-                isDefault: true,
-                isDelivery: true,
-                isBilling: true,
-              },
-            }
-          : undefined,
-      },
-      include: {
-        addresses: true,
-      },
+    // Adres verilerini hazırla
+    let addressData: any = undefined;
+    
+    // Yeni format: addresses array
+    if (addresses && Array.isArray(addresses) && addresses.length > 0) {
+      addressData = {
+        create: addresses.map((addr: any) => ({
+          title: addr.title || 'Adres',
+          address: addr.address,
+          district: addr.district || '',
+          city: addr.city,
+          postalCode: addr.postalCode || null,
+          isDefault: addr.isDefault || false,
+          isDelivery: addr.isDelivery !== false,
+          isBilling: addr.isBilling || false,
+          deliveryNotes: addr.deliveryNotes || null,
+        })),
+      };
+    }
+    // Eski format: tek adres (geriye uyumluluk için)
+    else if (address) {
+      addressData = {
+        create: {
+          title: 'Merkez',
+          address,
+          district: district || '',
+          city: city || '',
+          isDefault: true,
+          isDelivery: true,
+          isBilling: true,
+        },
+      };
+    }
+
+    // Transaction ile müşteri ve kullanıcı oluştur
+    const result = await prisma.$transaction(async (tx) => {
+      // Müşteri oluştur
+      const customer = await tx.customer.create({
+        data: {
+          code: customerCode,
+          companyName,
+          taxNumber,
+          taxOffice,
+          type: type as CustomerType,
+          status: 'ACTIVE',
+          contactName,
+          contactPhone,
+          contactEmail,
+          creditLimit: creditLimit || 0,
+          paymentTermDays: paymentTermDays || 0,
+          priceGroupId,
+          salesRepId: req.user?.role === 'SALES_REP' ? req.user.id : undefined,
+          notes,
+          addresses: addressData,
+        },
+        include: {
+          addresses: true,
+        },
+      });
+
+      // Bayi için DEALER_ADMIN kullanıcısı oluştur
+      let dealerUser = null;
+      if (type === 'DEALER' && createUser && userEmail && userPassword) {
+        const hashedPassword = await bcrypt.hash(userPassword, 12);
+        
+        // Kullanıcı oluştur
+        dealerUser = await tx.user.create({
+          data: {
+            email: userEmail,
+            phone: contactPhone,
+            password: hashedPassword,
+            firstName: contactName.split(' ')[0] || 'Bayi',
+            lastName: contactName.split(' ').slice(1).join(' ') || 'Admin',
+            role: 'DEALER_ADMIN',
+            status: 'ACTIVE',
+            customerId: customer.id,
+            createdById: req.user?.id,
+            mustChangePassword: true,
+          },
+        });
+
+        // Bayi Admin izinlerini oluştur
+        const dealerPermissions = [
+          { module: 'customers', canView: true, canCreate: true, canEdit: true, canDelete: false },
+          { module: 'products', canView: true, canCreate: true, canEdit: true, canDelete: false },
+          { module: 'orders', canView: true, canCreate: true, canEdit: true, canDelete: false },
+          { module: 'deliveries', canView: true, canCreate: true, canEdit: true, canDelete: false },
+          { module: 'payments', canView: true, canCreate: true, canEdit: true, canDelete: false },
+          { module: 'warehouses', canView: true, canCreate: false, canEdit: false, canDelete: false },
+          { module: 'reports', canView: true, canCreate: false, canEdit: false, canDelete: false },
+          { module: 'users', canView: true, canCreate: true, canEdit: true, canDelete: false },
+          { module: 'settings', canView: true, canCreate: false, canEdit: true, canDelete: false },
+        ];
+
+        for (const perm of dealerPermissions) {
+          await tx.userPermission.create({
+            data: {
+              userId: dealerUser.id,
+              ...perm,
+            },
+          });
+        }
+      }
+
+      return { customer, dealerUser };
     });
 
     res.status(201).json({
       success: true,
-      data: customer,
+      data: result.customer,
+      dealerUser: result.dealerUser ? {
+        id: result.dealerUser.id,
+        email: result.dealerUser.email,
+        role: result.dealerUser.role,
+      } : null,
     });
   } catch (error) {
     next(error);
@@ -259,10 +382,12 @@ export const updateCustomer = async (req: AuthRequest, res: Response, next: Next
       priceGroupId,
       salesRepId,
       notes,
+      addresses,
     } = req.body;
 
     const existingCustomer = await prisma.customer.findUnique({
       where: { id },
+      include: { addresses: true },
     });
 
     if (!existingCustomer) {
@@ -280,26 +405,84 @@ export const updateCustomer = async (req: AuthRequest, res: Response, next: Next
       }
     }
 
-    const customer = await prisma.customer.update({
-      where: { id },
-      data: {
-        companyName,
-        taxNumber,
-        taxOffice,
-        type: type as CustomerType,
-        status: status as CustomerStatus,
-        contactName,
-        contactPhone,
-        contactEmail,
-        creditLimit,
-        paymentTermDays,
-        priceGroupId,
-        salesRepId,
-        notes,
-      },
-      include: {
-        addresses: true,
-      },
+    // Transaction ile güncelleme
+    const customer = await prisma.$transaction(async (tx) => {
+      // Müşteriyi güncelle
+      const updatedCustomer = await tx.customer.update({
+        where: { id },
+        data: {
+          companyName,
+          taxNumber,
+          taxOffice,
+          type: type as CustomerType,
+          status: status as CustomerStatus,
+          contactName,
+          contactPhone,
+          contactEmail,
+          creditLimit,
+          paymentTermDays,
+          priceGroupId,
+          salesRepId,
+          notes,
+        },
+      });
+
+      // Adresler varsa güncelle
+      if (addresses && Array.isArray(addresses)) {
+        const existingAddressIds = existingCustomer.addresses.map(a => a.id);
+        const newAddressIds = addresses.filter((a: any) => !a.id?.startsWith('temp-')).map((a: any) => a.id);
+        
+        // Silinecek adresleri bul ve sil
+        const addressesToDelete = existingAddressIds.filter(id => !newAddressIds.includes(id));
+        if (addressesToDelete.length > 0) {
+          await tx.customerAddress.deleteMany({
+            where: { id: { in: addressesToDelete } },
+          });
+        }
+
+        // Her adres için update veya create
+        for (const address of addresses) {
+          if (address.id && !address.id.startsWith('temp-')) {
+            // Mevcut adresi güncelle
+            await tx.customerAddress.update({
+              where: { id: address.id },
+              data: {
+                title: address.title,
+                address: address.address,
+                district: address.district,
+                city: address.city,
+                postalCode: address.postalCode,
+                isDefault: address.isDefault,
+                isDelivery: address.isDelivery,
+                isBilling: address.isBilling,
+                deliveryNotes: address.deliveryNotes,
+              },
+            });
+          } else {
+            // Yeni adres ekle
+            await tx.customerAddress.create({
+              data: {
+                customerId: id,
+                title: address.title || 'Adres',
+                address: address.address,
+                district: address.district || '',
+                city: address.city,
+                postalCode: address.postalCode,
+                isDefault: address.isDefault || false,
+                isDelivery: address.isDelivery !== false,
+                isBilling: address.isBilling || false,
+                deliveryNotes: address.deliveryNotes,
+              },
+            });
+          }
+        }
+      }
+
+      // Güncellenmiş müşteriyi adreslerle birlikte getir
+      return tx.customer.findUnique({
+        where: { id },
+        include: { addresses: true },
+      });
     });
 
     res.json({
@@ -319,8 +502,9 @@ export const deleteCustomer = async (req: AuthRequest, res: Response, next: Next
     const customer = await prisma.customer.findUnique({
       where: { id },
       include: {
+        user: true,
         _count: {
-          select: { orders: true },
+          select: { orders: true, payments: true },
         },
       },
     });
@@ -330,11 +514,31 @@ export const deleteCustomer = async (req: AuthRequest, res: Response, next: Next
     }
 
     if (customer._count.orders > 0) {
-      throw new AppError('Siparişi olan müşteri silinemez', 400);
+      throw new AppError('Siparişi olan müşteri silinemez. Müşteriyi pasife çekebilirsiniz.', 400);
     }
 
-    await prisma.customer.delete({
-      where: { id },
+    if (customer._count.payments > 0) {
+      throw new AppError('Ödemesi olan müşteri silinemez. Müşteriyi pasife çekebilirsiniz.', 400);
+    }
+
+    // Transaction ile silme işlemi
+    await prisma.$transaction(async (tx) => {
+      // Ziyaretleri sil
+      await tx.customerVisit.deleteMany({
+        where: { customerId: id },
+      });
+
+      // Bağlı kullanıcıyı sil (varsa)
+      if (customer.user) {
+        await tx.user.delete({
+          where: { id: customer.user.id },
+        });
+      }
+
+      // Müşteriyi sil (adresleri cascade ile silinir)
+      await tx.customer.delete({
+        where: { id },
+      });
     });
 
     res.json({

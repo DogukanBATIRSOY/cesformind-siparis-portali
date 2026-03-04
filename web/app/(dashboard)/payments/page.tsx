@@ -41,6 +41,7 @@ const paymentTypeColors: Record<string, string> = {
   DOOR_CARD: 'default',
   CHECK: 'warning',
   PROMISSORY_NOTE: 'warning',
+  DBS: 'default',
 }
 
 const paymentTypeLabels: Record<string, string> = {
@@ -52,6 +53,7 @@ const paymentTypeLabels: Record<string, string> = {
   DOOR_CARD: 'Kapıda Kart',
   CHECK: 'Çek',
   PROMISSORY_NOTE: 'Senet',
+  DBS: 'DBS',
 }
 
 const paymentTypeIcons: Record<string, any> = {
@@ -63,6 +65,7 @@ const paymentTypeIcons: Record<string, any> = {
   DOOR_CARD: Truck,
   CHECK: Receipt,
   PROMISSORY_NOTE: Receipt,
+  DBS: Building2,
 }
 
 const statusColors: Record<string, string> = {
@@ -192,7 +195,8 @@ export default function PaymentsPage() {
       </div>
 
       {/* Ödeme Yöntemleri */}
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+      <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
+        {/* 1. Online Ödeme */}
         <Card className="border-2 border-dashed hover:border-primary cursor-pointer transition-colors">
           <CardContent className="p-4 text-center">
             <div className="flex flex-col items-center gap-2">
@@ -206,19 +210,7 @@ export default function PaymentsPage() {
             </div>
           </CardContent>
         </Card>
-        <Card className="border-2 border-dashed hover:border-primary cursor-pointer transition-colors">
-          <CardContent className="p-4 text-center">
-            <div className="flex flex-col items-center gap-2">
-              <div className="p-3 bg-green-100 rounded-full">
-                <Truck className="h-6 w-6 text-green-600" />
-              </div>
-              <div>
-                <p className="font-medium">Kapıda Ödeme</p>
-                <p className="text-xs text-muted-foreground">Nakit veya Kart</p>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
+        {/* 2. Havale/EFT */}
         <Card className="border-2 border-dashed hover:border-primary cursor-pointer transition-colors">
           <CardContent className="p-4 text-center">
             <div className="flex flex-col items-center gap-2">
@@ -232,6 +224,35 @@ export default function PaymentsPage() {
             </div>
           </CardContent>
         </Card>
+        {/* 3. DBS */}
+        <Card className="border-2 border-dashed hover:border-primary cursor-pointer transition-colors">
+          <CardContent className="p-4 text-center">
+            <div className="flex flex-col items-center gap-2">
+              <div className="p-3 bg-indigo-100 rounded-full">
+                <CreditCard className="h-6 w-6 text-indigo-600" />
+              </div>
+              <div>
+                <p className="font-medium">DBS</p>
+                <p className="text-xs text-muted-foreground">Doğrudan Borçlandırma</p>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+        {/* 4. Kapıda Ödeme */}
+        <Card className="border-2 border-dashed hover:border-primary cursor-pointer transition-colors">
+          <CardContent className="p-4 text-center">
+            <div className="flex flex-col items-center gap-2">
+              <div className="p-3 bg-green-100 rounded-full">
+                <Truck className="h-6 w-6 text-green-600" />
+              </div>
+              <div>
+                <p className="font-medium">Kapıda Ödeme</p>
+                <p className="text-xs text-muted-foreground">Nakit veya Kart</p>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+        {/* 5. Vadeli Ödeme */}
         <Card className="border-2 border-dashed hover:border-primary cursor-pointer transition-colors">
           <CardContent className="p-4 text-center">
             <div className="flex flex-col items-center gap-2">
@@ -279,6 +300,7 @@ export default function PaymentsPage() {
                 <option value="BANK_TRANSFER">Havale/EFT</option>
                 <option value="CHECK">Çek</option>
                 <option value="PROMISSORY_NOTE">Senet</option>
+                <option value="DBS">DBS (Doğrudan Borçlandırma)</option>
               </optgroup>
             </select>
             <select
@@ -614,6 +636,18 @@ function NewPaymentModal({ onClose }: { onClose: () => void }) {
                         <Building2 className="h-4 w-4" />
                         <span className="text-sm">Havale/EFT</span>
                       </button>
+                      <button
+                        type="button"
+                        onClick={() => setPaymentType('DBS')}
+                        className={`p-3 border rounded-lg flex items-center gap-2 ${
+                          paymentType === 'DBS'
+                            ? 'border-primary bg-primary/5'
+                            : ''
+                        }`}
+                      >
+                        <Building2 className="h-4 w-4" />
+                        <span className="text-sm">DBS</span>
+                      </button>
                     </>
                   ) : (
                     <>
@@ -640,6 +674,18 @@ function NewPaymentModal({ onClose }: { onClose: () => void }) {
                       >
                         <CreditCard className="h-4 w-4" />
                         <span className="text-sm">Kart</span>
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => setPaymentType('DBS')}
+                        className={`p-3 border rounded-lg flex items-center gap-2 ${
+                          paymentType === 'DBS'
+                            ? 'border-primary bg-primary/5'
+                            : ''
+                        }`}
+                      >
+                        <Building2 className="h-4 w-4" />
+                        <span className="text-sm">DBS</span>
                       </button>
                     </>
                   )}

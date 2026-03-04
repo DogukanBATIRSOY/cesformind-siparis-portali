@@ -1,22 +1,33 @@
 import { Request, Response, NextFunction } from 'express';
 import jwt from 'jsonwebtoken';
 import { prisma } from '../index.js';
-import { UserRole } from '@prisma/client';
+
+// Roller
+export const ROLES = {
+  SUPER_ADMIN: 'SUPER_ADMIN',
+  DEALER_ADMIN: 'DEALER_ADMIN',
+  SALES_REP: 'SALES_REP',
+  WAREHOUSE_USER: 'WAREHOUSE_USER',
+  DELIVERY: 'DELIVERY',
+  CUSTOMER: 'CUSTOMER',
+  ADMIN: 'ADMIN', // Geriye uyumluluk için
+};
 
 export interface AuthRequest extends Request {
   user?: {
     id: string;
     email: string;
-    role: UserRole;
+    role: string;
     customerId?: string;
     warehouseId?: string;
+    permissions?: any[];
   };
 }
 
 export interface JwtPayload {
   userId: string;
   email: string;
-  role: UserRole;
+  role: string;
   customerId?: string;
   warehouseId?: string;
 }
@@ -54,6 +65,7 @@ export const authenticate = async (
           status: true,
           customerId: true,
           warehouseId: true,
+          permissions: true,
         },
       });
 
@@ -77,6 +89,7 @@ export const authenticate = async (
         role: user.role,
         customerId: user.customerId || undefined,
         warehouseId: user.warehouseId || undefined,
+        permissions: user.permissions,
       };
 
       next();
@@ -91,7 +104,7 @@ export const authenticate = async (
   }
 };
 
-export const authorize = (...roles: UserRole[]) => {
+export const authorize = (...roles: string[]) => {
   return (req: AuthRequest, res: Response, next: NextFunction) => {
     if (!req.user) {
       return res.status(401).json({
@@ -100,10 +113,69 @@ export const authorize = (...roles: UserRole[]) => {
       });
     }
 
-    if (!roles.includes(req.user.role)) {
+    // Geriye uyumluluk: ADMIN rolü SUPER_ADMIN ve DEALER_ADMIN'i kapsar
+    const userRole = req.user.role;
+    let hasAccess = roles.includes(userRole);
+
+    // ADMIN -> SUPER_ADMIN veya DEALER_ADMIN
+    if (!hasAccess && roles.includes('ADMIN')) {
+      hasAccess = userRole === ROLES.SUPER_ADMIN || userRole === ROLES.DEALER_ADMIN;
+    }
+
+    // SUPER_ADMIN her şeye erişebilir
+    if (!hasAccess && userRole === ROLES.SUPER_ADMIN) {
+      hasAccess = true;
+    }
+
+    if (!hasAccess) {
       return res.status(403).json({
         success: false,
         message: 'Bu işlem için yetkiniz yok',
+      });
+    }
+
+    next();
+  };
+};
+
+// Modül bazlı izin kontrolü
+export const authorizeModule = (module: string, action: 'view' | 'create' | 'edit' | 'delete') => {
+  return (req: AuthRequest, res: Response, next: NextFunction) => {
+    if (!req.user) {
+      return res.status(401).json({
+        success: false,
+        message: 'Yetkilendirme gerekli',
+      });
+    }
+
+    // SUPER_ADMIN her şeye erişebilir
+    if (req.user.role === ROLES.SUPER_ADMIN) {
+      return next();
+    }
+
+    // İzinleri kontrol et
+    const permissions = req.user.permissions || [];
+    const modulePermission = permissions.find((p: any) => p.module === module);
+
+    if (!modulePermission) {
+      return res.status(403).json({
+        success: false,
+        message: `${module} modülüne erişim yetkiniz yok`,
+      });
+    }
+
+    const actionMap: Record<string, string> = {
+      view: 'canView',
+      create: 'canCreate',
+      edit: 'canEdit',
+      delete: 'canDelete',
+    };
+
+    const permissionKey = actionMap[action];
+    if (!modulePermission[permissionKey]) {
+      return res.status(403).json({
+        success: false,
+        message: `Bu işlem için yetkiniz yok`,
       });
     }
 
@@ -124,13 +196,13 @@ export const authorizeOwn = (
     });
   }
 
-  // Admin her şeye erişebilir
-  if (req.user.role === 'ADMIN') {
+  // SUPER_ADMIN ve DEALER_ADMIN her şeye erişebilir
+  if (req.user.role === ROLES.SUPER_ADMIN || req.user.role === ROLES.DEALER_ADMIN) {
     return next();
   }
 
   // Müşteri sadece kendi verilerine erişebilir
-  if (req.user.role === 'CUSTOMER') {
+  if (req.user.role === ROLES.CUSTOMER) {
     const customerId = req.params.customerId || req.body.customerId;
     if (customerId && customerId !== req.user.customerId) {
       return res.status(403).json({

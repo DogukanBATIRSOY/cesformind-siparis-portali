@@ -692,6 +692,9 @@ function PaymentsReport({ dateRange }: { dateRange: { startDate: string; endDate
     BANK_TRANSFER: 'Havale/EFT',
     CHECK: 'Çek',
     TERM: 'Vadeli',
+    DBS: 'DBS',
+    ON_DELIVERY: 'Kapıda Ödeme',
+    CREDIT: 'Açık Hesap',
   }
 
   if (isLoading) {

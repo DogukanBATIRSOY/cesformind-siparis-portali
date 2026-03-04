@@ -62,6 +62,11 @@ export const usersApi = {
   delete: (id: string) => api.delete(`/users/${id}`),
   updateStatus: (id: string, status: string) =>
     api.patch(`/users/${id}/status`, { status }),
+  updatePermissions: (id: string, permissions: any) =>
+    api.patch(`/users/${id}/permissions`, { permissions }),
+  resetPassword: (id: string, newPassword: string) =>
+    api.post(`/users/${id}/reset-password`, { newPassword }),
+  getRolesAndPermissions: () => api.get('/users/roles-permissions'),
 }
 
 // Customers

@@ -240,6 +240,7 @@ router.get('/products/:id', async (req, res, next) => {
         unit: true,
         packSize: true,
         isFeatured: true,
+        image: true,
         category: {
           select: {
             id: true,

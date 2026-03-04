@@ -46,9 +46,21 @@ export const getOrders = async (req: AuthRequest, res: Response, next: NextFunct
     // Rol bazlı filtreleme
     if (req.user?.role === 'CUSTOMER') {
       where.customerId = req.user.customerId;
+    } else if (req.user?.role === 'DEALER_ADMIN') {
+      // Bayi admin sadece kendi bayisine bağlı siparişleri görsün
+      const dealerUser = await prisma.user.findUnique({
+        where: { id: req.user.id },
+        select: { customerId: true },
+      });
+      if (dealerUser?.customerId) {
+        where.OR = [
+          { customerId: dealerUser.customerId },
+          { customer: { salesRepId: req.user.id } },
+        ];
+      }
     } else if (req.user?.role === 'SALES_REP') {
       where.customer = { salesRepId: req.user.id };
-    } else if (req.user?.role === 'WAREHOUSE') {
+    } else if (req.user?.role === 'WAREHOUSE' || req.user?.role === 'WAREHOUSE_USER') {
       where.warehouseId = req.user.warehouseId;
     }
 
@@ -172,6 +184,7 @@ export const getOrderById = async (req: AuthRequest, res: Response, next: NextFu
                 name: true,
                 sku: true,
                 barcode: true,
+                image: true,
                 images: {
                   where: { isMain: true },
                   take: 1,

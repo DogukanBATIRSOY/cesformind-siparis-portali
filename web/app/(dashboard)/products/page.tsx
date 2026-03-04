@@ -1,7 +1,7 @@
 'use client'
 
 import { useState } from 'react'
-import { useQuery } from '@tanstack/react-query'
+import { useQuery, useQueryClient } from '@tanstack/react-query'
 import Link from 'next/link'
 import { productsApi } from '@/lib/api'
 import { formatCurrency } from '@/lib/utils'
@@ -9,6 +9,7 @@ import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Card, CardContent } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
+import { toast } from 'sonner'
 import {
   Plus,
   Search,
@@ -18,6 +19,10 @@ import {
   ChevronRight,
   Package,
   AlertTriangle,
+  Trash2,
+  CheckSquare,
+  Square,
+  MinusSquare,
 } from 'lucide-react'
 
 const statusColors: Record<string, string> = {
@@ -39,6 +44,9 @@ export default function ProductsPage() {
   const [search, setSearch] = useState('')
   const [categoryId, setCategoryId] = useState('')
   const [status, setStatus] = useState('')
+  const [selectedProducts, setSelectedProducts] = useState<string[]>([])
+  const [isDeleting, setIsDeleting] = useState(false)
+  const queryClient = useQueryClient()
 
   const { data, isLoading } = useQuery({
     queryKey: ['products', page, search, categoryId, status],
@@ -55,6 +63,57 @@ export default function ProductsPage() {
   const products = data?.data?.data || []
   const meta = data?.data?.meta
 
+  const handleSelectAll = () => {
+    if (selectedProducts.length === products.length) {
+      setSelectedProducts([])
+    } else {
+      setSelectedProducts(products.map((p: any) => p.id))
+    }
+  }
+
+  const handleSelectProduct = (productId: string) => {
+    setSelectedProducts(prev => 
+      prev.includes(productId) 
+        ? prev.filter(id => id !== productId)
+        : [...prev, productId]
+    )
+  }
+
+  const handleBulkDelete = async () => {
+    if (selectedProducts.length === 0) return
+    
+    if (!confirm(`${selectedProducts.length} ürünü silmek istediğinize emin misiniz? Bu işlem geri alınamaz.`)) {
+      return
+    }
+
+    setIsDeleting(true)
+    let successCount = 0
+    let errorCount = 0
+
+    for (const productId of selectedProducts) {
+      try {
+        await productsApi.delete(productId)
+        successCount++
+      } catch (error) {
+        errorCount++
+      }
+    }
+
+    setIsDeleting(false)
+    setSelectedProducts([])
+    queryClient.invalidateQueries({ queryKey: ['products'] })
+
+    if (successCount > 0) {
+      toast.success(`${successCount} ürün başarıyla silindi`)
+    }
+    if (errorCount > 0) {
+      toast.error(`${errorCount} ürün silinemedi`)
+    }
+  }
+
+  const isAllSelected = products.length > 0 && selectedProducts.length === products.length
+  const isSomeSelected = selectedProducts.length > 0 && selectedProducts.length < products.length
+
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
@@ -64,12 +123,24 @@ export default function ProductsPage() {
             Ürün kataloğunu görüntüleyin ve yönetin
           </p>
         </div>
-        <Link href="/products/new">
-          <Button>
-            <Plus className="h-4 w-4 mr-2" />
-            Yeni Ürün
-          </Button>
-        </Link>
+        <div className="flex items-center gap-2">
+          {selectedProducts.length > 0 && (
+            <Button 
+              variant="destructive" 
+              onClick={handleBulkDelete}
+              disabled={isDeleting}
+            >
+              <Trash2 className="h-4 w-4 mr-2" />
+              {isDeleting ? 'Siliniyor...' : `${selectedProducts.length} Ürün Sil`}
+            </Button>
+          )}
+          <Link href="/products/new">
+            <Button>
+              <Plus className="h-4 w-4 mr-2" />
+              Yeni Ürün
+            </Button>
+          </Link>
+        </div>
       </div>
 
       {/* Filters */}
@@ -108,6 +179,17 @@ export default function ProductsPage() {
             <table className="w-full">
               <thead>
                 <tr className="border-b bg-muted/50">
+                  <th className="p-4 w-12">
+                    <button onClick={handleSelectAll} className="flex items-center justify-center">
+                      {isAllSelected ? (
+                        <CheckSquare className="h-5 w-5 text-primary" />
+                      ) : isSomeSelected ? (
+                        <MinusSquare className="h-5 w-5 text-primary" />
+                      ) : (
+                        <Square className="h-5 w-5 text-muted-foreground" />
+                      )}
+                    </button>
+                  </th>
                   <th className="text-left p-4 font-medium">Ürün</th>
                   <th className="text-left p-4 font-medium">SKU</th>
                   <th className="text-left p-4 font-medium">Kategori</th>
@@ -120,7 +202,7 @@ export default function ProductsPage() {
               <tbody>
                 {isLoading ? (
                   <tr>
-                    <td colSpan={7} className="p-8 text-center">
+                    <td colSpan={8} className="p-8 text-center">
                       <div className="flex justify-center">
                         <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
                       </div>
@@ -129,7 +211,7 @@ export default function ProductsPage() {
                 ) : products.length === 0 ? (
                   <tr>
                     <td
-                      colSpan={7}
+                      colSpan={8}
                       className="p-8 text-center text-muted-foreground"
                     >
                       Ürün bulunamadı
@@ -137,7 +219,22 @@ export default function ProductsPage() {
                   </tr>
                 ) : (
                   products.map((product: any) => (
-                    <tr key={product.id} className="border-b hover:bg-muted/50">
+                    <tr 
+                      key={product.id} 
+                      className={`border-b hover:bg-muted/50 ${selectedProducts.includes(product.id) ? 'bg-primary/5' : ''}`}
+                    >
+                      <td className="p-4">
+                        <button 
+                          onClick={() => handleSelectProduct(product.id)}
+                          className="flex items-center justify-center"
+                        >
+                          {selectedProducts.includes(product.id) ? (
+                            <CheckSquare className="h-5 w-5 text-primary" />
+                          ) : (
+                            <Square className="h-5 w-5 text-muted-foreground" />
+                          )}
+                        </button>
+                      </td>
                       <td className="p-4">
                         <div className="flex items-center gap-3">
                           <div className="w-12 h-12 bg-muted rounded-lg flex items-center justify-center overflow-hidden">
@@ -219,6 +316,7 @@ export default function ProductsPage() {
             <div className="flex items-center justify-between p-4 border-t">
               <p className="text-sm text-muted-foreground">
                 Toplam {meta.total} ürün
+                {selectedProducts.length > 0 && ` (${selectedProducts.length} seçili)`}
               </p>
               <div className="flex items-center gap-2">
                 <Button

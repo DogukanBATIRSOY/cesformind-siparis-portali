@@ -178,7 +178,7 @@ export const deleteWarehouse = async (req: AuthRequest, res: Response, next: Nex
       where: { id },
       include: {
         _count: {
-          select: { stocks: true, orders: true },
+          select: { orders: true },
         },
       },
     });
@@ -191,12 +191,34 @@ export const deleteWarehouse = async (req: AuthRequest, res: Response, next: Nex
       throw new AppError('Siparişi olan depo silinemez', 400);
     }
 
-    if (warehouse._count.stocks > 0) {
-      throw new AppError('Stoğu olan depo silinemez', 400);
+    // Gerçek stoku olan kayıtları kontrol et (quantity > 0)
+    const stocksWithQuantity = await prisma.warehouseStock.findMany({
+      where: {
+        warehouseId: id,
+        quantity: { gt: 0 },
+      },
+    });
+
+    if (stocksWithQuantity.length > 0) {
+      throw new AppError(`Bu depoda ${stocksWithQuantity.length} ürün için stok bulunmaktadır. Önce stokları transfer edin.`, 400);
     }
 
-    await prisma.warehouse.delete({
-      where: { id },
+    // Transaction ile sil
+    await prisma.$transaction(async (tx) => {
+      // Önce sıfır stoklu kayıtları temizle
+      await tx.warehouseStock.deleteMany({
+        where: { warehouseId: id },
+      });
+
+      // Stok hareketlerini sil
+      await tx.stockMovement.deleteMany({
+        where: { warehouseId: id },
+      });
+
+      // Depoyu sil
+      await tx.warehouse.delete({
+        where: { id },
+      });
     });
 
     res.json({
@@ -369,17 +391,21 @@ export const transferStock = async (req: AuthRequest, res: Response, next: NextF
       },
     });
 
-    const availableStock = sourceStock
-      ? sourceStock.quantity.sub(sourceStock.reserved)
-      : new Prisma.Decimal(0);
+    if (!sourceStock) {
+      throw new AppError('Kaynak depoda bu ürün için stok kaydı bulunamadı', 404);
+    }
+
+    const sourceQuantity = new Prisma.Decimal(sourceStock.quantity.toString());
+    const sourceReserved = new Prisma.Decimal(sourceStock.reserved?.toString() || '0');
+    const availableStock = sourceQuantity.sub(sourceReserved);
 
     if (availableStock.lessThan(qty)) {
-      throw new AppError('Yetersiz stok', 400);
+      throw new AppError(`Yetersiz stok. Mevcut: ${availableStock.toString()}`, 400);
     }
 
     await prisma.$transaction(async (tx) => {
       // Kaynak depodan düş
-      const newSourceQuantity = sourceStock!.quantity.sub(qty);
+      const newSourceQuantity = sourceQuantity.sub(qty);
       await tx.warehouseStock.update({
         where: {
           warehouseId_productId: {
@@ -397,11 +423,11 @@ export const transferStock = async (req: AuthRequest, res: Response, next: NextF
           productId,
           type: 'TRANSFER',
           quantity: qty,
-          previousStock: sourceStock!.quantity,
+          previousStock: sourceQuantity,
           newStock: newSourceQuantity,
           referenceType: 'TRANSFER',
           referenceId: toWarehouseId,
-          notes: `${toWarehouseId} deposuna transfer`,
+          notes: notes || `Hedef depoya transfer`,
           createdBy: req.user!.id,
         },
       });
@@ -416,7 +442,9 @@ export const transferStock = async (req: AuthRequest, res: Response, next: NextF
         },
       });
 
-      const previousTargetQuantity = targetStock?.quantity || new Prisma.Decimal(0);
+      const previousTargetQuantity = targetStock 
+        ? new Prisma.Decimal(targetStock.quantity.toString()) 
+        : new Prisma.Decimal(0);
       const newTargetQuantity = previousTargetQuantity.add(qty);
 
       // Hedef depoya ekle
@@ -448,7 +476,7 @@ export const transferStock = async (req: AuthRequest, res: Response, next: NextF
           newStock: newTargetQuantity,
           referenceType: 'TRANSFER',
           referenceId: fromWarehouseId,
-          notes: `${fromWarehouseId} deposundan transfer`,
+          notes: notes || `Kaynak depodan transfer`,
           createdBy: req.user!.id,
         },
       });

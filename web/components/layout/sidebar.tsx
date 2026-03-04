@@ -19,6 +19,8 @@ import {
   ChevronRight,
   Boxes,
   SlidersHorizontal,
+  ArrowLeftRight,
+  UserCog,
 } from 'lucide-react'
 
 const menuItems = [
@@ -26,67 +28,79 @@ const menuItems = [
     title: 'Dashboard',
     href: '/dashboard',
     icon: LayoutDashboard,
-    roles: ['ADMIN', 'SALES_REP', 'WAREHOUSE'],
+    roles: ['SUPER_ADMIN', 'DEALER_ADMIN', 'ADMIN', 'SALES_REP', 'WAREHOUSE_USER', 'WAREHOUSE'],
   },
   {
     title: 'Müşteriler',
     href: '/customers',
     icon: Users,
-    roles: ['ADMIN', 'SALES_REP'],
+    roles: ['SUPER_ADMIN', 'DEALER_ADMIN', 'ADMIN', 'SALES_REP'],
   },
   {
     title: 'Ürünler',
     href: '/products',
     icon: Package,
-    roles: ['ADMIN', 'SALES_REP', 'WAREHOUSE'],
+    roles: ['SUPER_ADMIN', 'DEALER_ADMIN', 'ADMIN', 'SALES_REP', 'WAREHOUSE_USER', 'WAREHOUSE'],
   },
   {
     title: 'Kategoriler',
     href: '/categories',
     icon: Boxes,
-    roles: ['ADMIN'],
+    roles: ['SUPER_ADMIN', 'DEALER_ADMIN', 'ADMIN'],
   },
   {
     title: 'Siparişler',
     href: '/orders',
     icon: ShoppingCart,
-    roles: ['ADMIN', 'SALES_REP', 'WAREHOUSE', 'CUSTOMER'],
+    roles: ['SUPER_ADMIN', 'DEALER_ADMIN', 'ADMIN', 'SALES_REP', 'WAREHOUSE_USER', 'WAREHOUSE', 'CUSTOMER'],
   },
   {
     title: 'Teslimatlar',
     href: '/deliveries',
     icon: Truck,
-    roles: ['ADMIN', 'WAREHOUSE', 'DELIVERY'],
+    roles: ['SUPER_ADMIN', 'DEALER_ADMIN', 'ADMIN', 'WAREHOUSE_USER', 'WAREHOUSE', 'DELIVERY'],
   },
   {
     title: 'Ödemeler',
     href: '/payments',
     icon: CreditCard,
-    roles: ['ADMIN', 'SALES_REP'],
+    roles: ['SUPER_ADMIN', 'DEALER_ADMIN', 'ADMIN', 'SALES_REP'],
   },
   {
     title: 'Depolar',
     href: '/warehouses',
     icon: Warehouse,
-    roles: ['ADMIN', 'WAREHOUSE'],
+    roles: ['SUPER_ADMIN', 'DEALER_ADMIN', 'ADMIN', 'WAREHOUSE_USER', 'WAREHOUSE'],
+  },
+  {
+    title: 'Stok Transfer',
+    href: '/stock-transfer',
+    icon: ArrowLeftRight,
+    roles: ['SUPER_ADMIN', 'DEALER_ADMIN', 'ADMIN', 'WAREHOUSE_USER', 'WAREHOUSE'],
   },
   {
     title: 'Raporlar',
     href: '/reports',
     icon: BarChart3,
-    roles: ['ADMIN', 'SALES_REP'],
+    roles: ['SUPER_ADMIN', 'DEALER_ADMIN', 'ADMIN', 'SALES_REP'],
+  },
+  {
+    title: 'Kullanıcılar',
+    href: '/users',
+    icon: UserCog,
+    roles: ['SUPER_ADMIN', 'DEALER_ADMIN'],
   },
   {
     title: 'Filtreler',
     href: '/filters',
     icon: SlidersHorizontal,
-    roles: ['ADMIN'],
+    roles: ['SUPER_ADMIN', 'DEALER_ADMIN', 'ADMIN'],
   },
   {
     title: 'Ayarlar',
     href: '/settings',
     icon: Settings,
-    roles: ['ADMIN'],
+    roles: ['SUPER_ADMIN', 'DEALER_ADMIN', 'ADMIN'],
   },
 ]
 
@@ -182,8 +196,11 @@ export function Sidebar() {
                 {user.firstName} {user.lastName}
               </p>
               <p className="text-xs text-muted-foreground truncate">
+                {user.role === 'SUPER_ADMIN' && 'Süper Admin'}
+                {user.role === 'DEALER_ADMIN' && 'Bayi Admin'}
                 {user.role === 'ADMIN' && 'Yönetici'}
-                {user.role === 'SALES_REP' && 'Satış Temsilcisi'}
+                {user.role === 'SALES_REP' && 'Plasiyer'}
+                {user.role === 'WAREHOUSE_USER' && 'Depo Kullanıcısı'}
                 {user.role === 'WAREHOUSE' && 'Depo Görevlisi'}
                 {user.role === 'DELIVERY' && 'Teslimatçı'}
                 {user.role === 'CUSTOMER' && 'Müşteri'}

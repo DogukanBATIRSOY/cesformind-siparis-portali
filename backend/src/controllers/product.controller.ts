@@ -59,7 +59,26 @@ export const getProducts = async (req: AuthRequest, res: Response, next: NextFun
         skip,
         take,
         orderBy: { [sortBy as string]: sortOrder },
-        include: {
+        select: {
+          id: true,
+          sku: true,
+          barcode: true,
+          name: true,
+          description: true,
+          unit: true,
+          packSize: true,
+          basePrice: true,
+          costPrice: true,
+          taxRate: true,
+          minStock: true,
+          maxStock: true,
+          status: true,
+          isFeatured: true,
+          image: true,
+          categoryId: true,
+          brandId: true,
+          createdAt: true,
+          updatedAt: true,
           category: {
             select: {
               id: true,
@@ -272,7 +291,12 @@ export const createProduct = async (req: AuthRequest, res: Response, next: NextF
       taxRate,
       minStock,
       maxStock,
+      image,
       images,
+      initialStock,
+      warehouseId,
+      status,
+      isFeatured,
     } = req.body;
 
     // SKU kontrolü
@@ -311,6 +335,9 @@ export const createProduct = async (req: AuthRequest, res: Response, next: NextF
         taxRate: taxRate || 18,
         minStock: minStock || 0,
         maxStock,
+        image,
+        status: status || 'ACTIVE',
+        isFeatured: isFeatured || false,
         images: images
           ? {
               create: images.map((img: any, index: number) => ({
@@ -328,6 +355,52 @@ export const createProduct = async (req: AuthRequest, res: Response, next: NextF
         images: true,
       },
     });
+
+    // Başlangıç stoku varsa, stok kaydı oluştur
+    if (initialStock && initialStock > 0) {
+      // Varsayılan depoyu al veya gönderilen depoyu kullan
+      let targetWarehouseId = warehouseId;
+      
+      if (!targetWarehouseId) {
+        const defaultWarehouse = await prisma.warehouse.findFirst({
+          where: { isDefault: true },
+        });
+        if (defaultWarehouse) {
+          targetWarehouseId = defaultWarehouse.id;
+        } else {
+          const anyWarehouse = await prisma.warehouse.findFirst();
+          if (anyWarehouse) {
+            targetWarehouseId = anyWarehouse.id;
+          }
+        }
+      }
+
+      if (targetWarehouseId) {
+        // Stok kaydı oluştur
+        await prisma.warehouseStock.create({
+          data: {
+            warehouseId: targetWarehouseId,
+            productId: product.id,
+            quantity: initialStock,
+            reserved: 0,
+          },
+        });
+
+        // Stok hareketi kaydet
+        await prisma.stockMovement.create({
+          data: {
+            warehouseId: targetWarehouseId,
+            productId: product.id,
+            type: 'IN',
+            quantity: initialStock,
+            previousStock: 0,
+            newStock: initialStock,
+            notes: 'Başlangıç stoğu',
+            createdBy: req.user!.id,
+          },
+        });
+      }
+    }
 
     res.status(201).json({
       success: true,
@@ -391,6 +464,7 @@ export const updateProduct = async (req: AuthRequest, res: Response, next: NextF
         taxRate: updateData.taxRate,
         minStock: updateData.minStock,
         maxStock: updateData.maxStock,
+        image: updateData.image,
         status: updateData.status,
         isFeatured: updateData.isFeatured,
       },
@@ -441,9 +515,25 @@ export const deleteProduct = async (req: AuthRequest, res: Response, next: NextF
       });
     }
 
-    await prisma.product.delete({
-      where: { id },
-    });
+    // İlişkili kayıtları sil (transaction ile)
+    await prisma.$transaction([
+      // Stok hareketlerini sil
+      prisma.stockMovement.deleteMany({
+        where: { productId: id },
+      }),
+      // Depo stoklarını sil
+      prisma.warehouseStock.deleteMany({
+        where: { productId: id },
+      }),
+      // Fiyat grubu öğelerini sil
+      prisma.priceGroupItem.deleteMany({
+        where: { productId: id },
+      }),
+      // Ürünü sil (ProductImage cascade ile silinecek)
+      prisma.product.delete({
+        where: { id },
+      }),
+    ]);
 
     res.json({
       success: true,

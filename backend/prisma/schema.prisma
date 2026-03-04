@@ -19,7 +19,7 @@ model User {
   password      String
   firstName     String
   lastName      String
-  role          String   @default("CUSTOMER") // ADMIN, SALES_REP, DELIVERY, WAREHOUSE, CUSTOMER
+  role          String   @default("CUSTOMER") // SUPER_ADMIN, DEALER_ADMIN, SALES_REP, WAREHOUSE_USER, DELIVERY, CUSTOMER
   status        String   @default("ACTIVE") // ACTIVE, INACTIVE, SUSPENDED
   avatar        String?
   
@@ -31,6 +31,11 @@ model User {
   emailVerificationCode   String?   // 6 haneli doğrulama kodu
   emailVerificationExpires DateTime? // Kodun geçerlilik süresi
   
+  // Hiyerarşi - Hangi admin tarafından oluşturuldu
+  createdById   String?
+  createdByUser User?    @relation("UserCreatedBy", fields: [createdById], references: [id])
+  createdUsers  User[]   @relation("UserCreatedBy")
+  
   customerId    String?  @unique
   customer      Customer? @relation(fields: [customerId], references: [id])
   
@@ -41,11 +46,32 @@ model User {
   warehouseId   String?
   warehouse     Warehouse? @relation(fields: [warehouseId], references: [id])
   
+  // Kullanıcı izinleri
+  permissions   UserPermission[]
+  
   activityLogs  ActivityLog[]
   
   lastLoginAt   DateTime?
   createdAt     DateTime @default(now())
   updatedAt     DateTime @updatedAt
+}
+
+// Kullanıcı İzinleri
+model UserPermission {
+  id          String   @id @default(cuid())
+  userId      String
+  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  
+  module      String   // customers, products, orders, deliveries, payments, warehouses, reports, users, settings
+  canView     Boolean  @default(false)
+  canCreate   Boolean  @default(false)
+  canEdit     Boolean  @default(false)
+  canDelete   Boolean  @default(false)
+  
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  
+  @@unique([userId, module])
 }
 
 model Session {
@@ -66,7 +92,7 @@ model Customer {
   companyName     String
   taxNumber       String?  @unique
   taxOffice       String?
-  type            String   @default("OTHER") // RESTAURANT, MARKET, HOTEL, CAFE, CATERING, WHOLESALE, OTHER
+  type            String   @default("OTHER") // DEALER, RESTAURANT, MARKET, HOTEL, CAFE, CATERING, WHOLESALE, INDIVIDUAL, OTHER
   status          String   @default("PENDING_APPROVAL") // ACTIVE, INACTIVE, SUSPENDED, PENDING_APPROVAL
   
   contactName     String

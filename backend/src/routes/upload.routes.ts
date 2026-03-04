@@ -54,6 +54,12 @@ router.post('/image', authenticate, async (req, res) => {
     fs.writeFileSync(filepath, buffer);
 
     const imageUrl = `/uploads/${filename}`;
+    
+    console.log('Image uploaded successfully:', {
+      url: imageUrl,
+      filepath,
+      size: buffer.length,
+    });
 
     res.json({
       success: true,

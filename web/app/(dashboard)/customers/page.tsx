@@ -24,6 +24,8 @@ import {
   X,
   Copy,
   Check,
+  Trash2,
+  AlertTriangle,
 } from 'lucide-react'
 
 const typeLabels: Record<string, string> = {
@@ -65,6 +67,11 @@ export default function CustomersPage() {
     loading: boolean
     result: { password: string; email: string } | null
   }>({ open: false, customer: null, loading: false, result: null })
+  const [deleteModal, setDeleteModal] = useState<{
+    open: boolean
+    customer: any
+    loading: boolean
+  }>({ open: false, customer: null, loading: false })
   const [copied, setCopied] = useState(false)
   const queryClient = useQueryClient()
 
@@ -115,6 +122,28 @@ export default function CustomersPage() {
   const closeResetModal = () => {
     setResetPasswordModal({ open: false, customer: null, loading: false, result: null })
     setCopied(false)
+  }
+
+  // Müşteri silme
+  const handleDeleteCustomer = async () => {
+    if (!deleteModal.customer) return
+    
+    setDeleteModal((prev) => ({ ...prev, loading: true }))
+    
+    try {
+      await customersApi.delete(deleteModal.customer.id)
+      toast.success('Müşteri başarıyla silindi')
+      queryClient.invalidateQueries({ queryKey: ['customers'] })
+      setDeleteModal({ open: false, customer: null, loading: false })
+    } catch (error: any) {
+      const message = error.response?.data?.message || 'Müşteri silinirken hata oluştu'
+      toast.error(message)
+      setDeleteModal((prev) => ({ ...prev, loading: false }))
+    }
+  }
+
+  const closeDeleteModal = () => {
+    setDeleteModal({ open: false, customer: null, loading: false })
   }
 
   return (
@@ -216,9 +245,18 @@ export default function CustomersPage() {
                   <div className="text-sm text-muted-foreground">
                     {typeLabels[customer.type]}
                   </div>
-                  {customer.addresses?.[0] && (
-                    <div className="text-sm text-muted-foreground">
-                      {customer.addresses[0].district}, {customer.addresses[0].city}
+                  {customer.addresses && customer.addresses.length > 0 && (
+                    <div className="text-xs text-muted-foreground space-y-1 pt-1">
+                      {customer.addresses.filter((a: any) => a.isBilling).slice(0, 1).map((a: any) => (
+                        <div key={a.id} className="flex items-center gap-1">
+                          <span className="text-blue-600 font-medium">Fatura:</span>
+                          <span className="truncate">{a.city}</span>
+                        </div>
+                      ))}
+                      <div className="flex items-center gap-1">
+                        <span className="text-green-600 font-medium">Teslimat:</span>
+                        <span>{customer.addresses.filter((a: any) => a.isDelivery).length} adres</span>
+                      </div>
                     </div>
                   )}
                 </div>
@@ -255,6 +293,21 @@ export default function CustomersPage() {
                       }
                     >
                       <KeyRound className="h-4 w-4" />
+                    </Button>
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      title="Sil"
+                      className="text-destructive hover:text-destructive"
+                      onClick={() =>
+                        setDeleteModal({
+                          open: true,
+                          customer,
+                          loading: false,
+                        })
+                      }
+                    >
+                      <Trash2 className="h-4 w-4" />
                     </Button>
                   </div>
                 </div>
@@ -401,6 +454,81 @@ export default function CustomersPage() {
                   </div>
                 </>
               )}
+            </CardContent>
+          </Card>
+        </div>
+      )}
+
+      {/* Müşteri Silme Modal */}
+      {deleteModal.open && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center">
+          <div
+            className="absolute inset-0 bg-black/50"
+            onClick={closeDeleteModal}
+          />
+          <Card className="relative z-10 w-full max-w-md mx-4">
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+              <CardTitle className="text-lg flex items-center gap-2 text-destructive">
+                <AlertTriangle className="h-5 w-5" />
+                Müşteri Sil
+              </CardTitle>
+              <Button variant="ghost" size="icon" onClick={closeDeleteModal}>
+                <X className="h-4 w-4" />
+              </Button>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div className="flex items-center gap-3 p-3 bg-muted rounded-lg">
+                <div className="p-2 bg-destructive/10 rounded-lg">
+                  <Building2 className="h-5 w-5 text-destructive" />
+                </div>
+                <div>
+                  <p className="font-semibold">
+                    {deleteModal.customer?.companyName}
+                  </p>
+                  <p className="text-sm text-muted-foreground">
+                    {deleteModal.customer?.code}
+                  </p>
+                </div>
+              </div>
+              
+              <div className="p-3 bg-yellow-50 dark:bg-yellow-950 rounded-lg border border-yellow-200 dark:border-yellow-800">
+                <p className="text-sm text-yellow-800 dark:text-yellow-200">
+                  <strong>Dikkat:</strong> Bu işlem geri alınamaz. Siparişi olan müşteriler silinemez, 
+                  sadece pasife çekilebilir.
+                </p>
+              </div>
+              
+              <p className="text-sm text-muted-foreground">
+                Bu müşteriyi silmek istediğinizden emin misiniz?
+              </p>
+              
+              <div className="flex gap-2">
+                <Button
+                  variant="outline"
+                  className="flex-1"
+                  onClick={closeDeleteModal}
+                >
+                  İptal
+                </Button>
+                <Button
+                  variant="destructive"
+                  className="flex-1"
+                  onClick={handleDeleteCustomer}
+                  disabled={deleteModal.loading}
+                >
+                  {deleteModal.loading ? (
+                    <>
+                      <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2" />
+                      Siliniyor...
+                    </>
+                  ) : (
+                    <>
+                      <Trash2 className="h-4 w-4 mr-2" />
+                      Sil
+                    </>
+                  )}
+                </Button>
+              </div>
             </CardContent>
           </Card>
         </div>
